@@ -81,8 +81,8 @@ ui <- dashboardPage(
       radioButtons("route", NULL, choices = c("Subcutaneous" = "sc", "Intravenous" = "iv"),
                    selected = "sc", inline = TRUE),
       fluidRow(
-        column(7, numericInput("dose", "Dose", value = 0.3, min = 0, step = 0.1)),
-        column(5, selectInput("dose_basis", "Unit", choices = c("mg/kg" = "mgkg", "mg" = "flat")))
+        column(6, numericInput("dose", "Dose", value = 0.3, min = 0, step = 0.1)),
+        column(6, selectInput("dose_basis", "Unit", choices = c("mg/kg" = "mgkg", "mg" = "flat"), selectize = FALSE))
       ),
       numericInput("load", "Loading dose (same unit, 0 = none)", value = 0, min = 0, step = 0.1, width = "100%"),
       fluidRow(
