@@ -470,6 +470,34 @@ mrg_uses_time <- function(model) any(grepl("\\bt\\b", model$ode))
 
 # --- Stiff solver ----------------------------------------------------------------------
 
+#' Inverses of m small matrices at once
+#'
+#' Gauss-Jordan elimination with partial pivoting, vectorised over the third
+#' dimension. Returns an [n x n x m] array, or NULL if any matrix is singular.
+batched_inverse <- function(A) {
+  n <- dim(A)[1]; m <- dim(A)[3]; w <- 2 * n
+  M <- array(0, c(n, w, m))
+  M[, seq_len(n), ] <- A
+  for (i in seq_len(n)) M[i, n + i, ] <- 1
+  for (k in seq_len(n)) {
+    if (k < n) {
+      p <- k - 1 + max.col(t(matrix(abs(M[k:n, k, ]), ncol = m)), ties.method = "first")
+      sw <- which(p != k)
+      if (length(sw)) {
+        ik <- cbind(k, rep(seq_len(w), length(sw)), rep(sw, each = w))
+        ip <- cbind(rep(p[sw], each = w), rep(seq_len(w), length(sw)), rep(sw, each = w))
+        tmp <- M[ik]; M[ik] <- M[ip]; M[ip] <- tmp
+      }
+    }
+    piv <- M[k, k, ]
+    if (any(!is.finite(piv)) || any(abs(piv) < 1e-300)) return(NULL)
+    rk <- matrix(M[k, , ], w, m) / rep(piv, each = w)
+    M[k, , ] <- rk
+    for (i in seq_len(n)[-k]) M[i, , ] <- matrix(M[i, , ], w, m) - rep(M[i, k, ], each = w) * rk
+  }
+  array(M[, n + seq_len(n), ], c(n, n, m))
+}
+
 #' One Rosenbrock run from t0 to t1 for every column at once
 #'
 #' The modified Rosenbrock (2,3) pair of Shampine & Reichelt (SIAM J Sci
@@ -493,24 +521,30 @@ rosenbrock_segment <- function(f, Y, t0, t1, V, u, h, rtol, atol, max_steps = 2e
   uj <- u[, rep(seq_len(m), each = n + 1), drop = FALSE]
   steps <- 0
   I <- diag(n)
-  Jl <- NULL
+  # Many subjects and few states: invert all the small systems at once
+  # (vectorised over subjects) instead of one solve() per subject.
+  batched <- m >= 4 && n <= 16
+  pert <- cbind(rep(seq_len(n), m), rep((seq_len(m) - 1) * (n + 1), each = n) + 1 + rep(seq_len(n), m))
+  # Large systems: the inversion dominates, so while the Jacobian is being
+  # reused and the step size would only grow a little, keep the step size
+  # and reuse the inverse too.
+  reuse_w <- n > 60
+  jac_id <- 0
+  w_key <- NULL
+  J <- NULL
   jac_age <- Inf
   while (t < t1 - 1e-12 * max(1, abs(t1))) {
     h <- min(h, t1 - t)
     if (jac_age >= jac_every) {
       del <- sqrt(.Machine$double.eps) * pmax(abs(Y), atol)
       Yp <- Y[, rep(seq_len(m), each = n + 1), drop = FALSE]
-      for (s in seq_len(m)) {
-        base <- (s - 1) * (n + 1)
-        for (j in seq_len(n)) Yp[j, base + 1 + j] <- Yp[j, base + 1 + j] + del[j, s]
-      }
-      Fp <- fu(t, Yp, Vj, uj)
-      F0 <- Fp[, seq(1, m * (n + 1), by = n + 1), drop = FALSE]
-      Jl <- lapply(seq_len(m), function(s) {
-        base <- (s - 1) * (n + 1)
-        (Fp[, base + 1 + seq_len(n), drop = FALSE] - F0[, s]) / rep(del[, s], each = n)
-      })
+      Yp[pert] <- Yp[pert] + as.vector(del)
+      Fp <- array(fu(t, Yp, Vj, uj), c(n, n + 1, m))
+      F0 <- matrix(Fp[, 1, ], n, m)
+      # J[i, j, s] = d f_i / d y_j for subject s
+      J <- (Fp[, -1, , drop = FALSE] - Fp[, rep(1, n), , drop = FALSE]) / rep(as.vector(del), each = n)
       jac_age <- 0
+      jac_id <- jac_id + 1
     } else {
       F0 <- fu(t, Y, V, u)
     }
@@ -518,12 +552,25 @@ rosenbrock_segment <- function(f, Y, t0, t1, V, u, h, rtol, atol, max_steps = 2e
       dt <- sqrt(.Machine$double.eps) * max(abs(t), 1)
       (fu(t + dt, Y, V, u) - F0) / dt
     } else 0
-    Winv <- lapply(Jl, function(J) tryCatch(solve(I - h * d * J, tol = 0), error = function(e) NULL))
-    if (any(vapply(Winv, is.null, TRUE))) { h <- h / 4; jac_age <- Inf; next }
-    mult <- function(Rhs) {
-      out <- Rhs
-      for (s in seq_len(m)) out[, s] <- Winv[[s]] %*% Rhs[, s]
-      out
+    if (batched) {
+      Winv <- batched_inverse(rep(as.vector(I), m) - h * d * J)
+      if (is.null(Winv)) { h <- h / 4; jac_age <- Inf; next }
+      mult <- function(Rhs) {
+        out <- matrix(0, n, m)
+        for (j in seq_len(n)) out <- out + Winv[, j, ] * rep(Rhs[j, ], each = n)
+        out
+      }
+    } else {
+      if (!identical(w_key, c(h, jac_id))) {
+        Winv <- lapply(seq_len(m), function(s) tryCatch(solve(I - h * d * J[, , s], tol = 0), error = function(e) NULL))
+        if (any(vapply(Winv, is.null, TRUE))) { h <- h / 4; jac_age <- Inf; w_key <- NULL; next }
+        w_key <- c(h, jac_id)
+      }
+      mult <- function(Rhs) {
+        out <- Rhs
+        for (s in seq_len(m)) out[, s] <- Winv[[s]] %*% Rhs[, s]
+        out
+      }
     }
     k1 <- mult(F0 + h * d * Tt)
     F1 <- fu(t + 0.5 * h, Y + 0.5 * h * k1, V, u)
@@ -542,7 +589,8 @@ rosenbrock_segment <- function(f, Y, t0, t1, V, u, h, rtol, atol, max_steps = 2e
       jac_age <- Inf
     }
     fac <- if (is.finite(enorm)) 0.8 * max(enorm, 1e-10)^(-1 / 3) else 0.1
-    h <- h * min(5, max(0.1, fac))
+    keep <- reuse_w && is.finite(enorm) && enorm <= 1 && jac_age < jac_every && fac >= 1 && fac < 2
+    if (!keep) h <- h * min(5, max(0.1, fac))
     steps <- steps + 1
     if (steps > max_steps) stop("ODE solver exceeded the maximum number of steps")
   }
@@ -560,11 +608,14 @@ rosenbrock_segment <- function(f, Y, t0, t1, V, u, h, rtol, atol, max_steps = 2e
 #' @param times output times
 #' @param init optional starting state (named vector, or [cmt x subject] matrix)
 #' @param nonneg evaluate the right-hand side at max(state, 0)
+#' @param rhs optional hand-vectorised right-hand side function(t, Y, V)
+#'   equivalent to the model's $ODE, for large models whose translated code
+#'   is too slow; $TABLE outputs still come from the model file
 #' @return list(time, states [time x cmt x subject], table outputs as
 #'   matrices [time x subject])
 mrg_solve <- function(model, P = data.frame(row.names = 1), events = NULL, times,
                       rtol = 1e-6, atol = 1e-10, h0 = 1e-4, init = NULL,
-                      nonneg = FALSE) {
+                      nonneg = FALSE, rhs = NULL) {
   if (!nrow(P)) P <- data.frame(row.names = 1)
   m <- nrow(P)
   n <- length(model$cmt)
@@ -573,7 +624,7 @@ mrg_solve <- function(model, P = data.frame(row.names = 1), events = NULL, times
     if (nm %in% names(P)) P[[nm]] else rep(model$param[[nm]], m)
   }), mn$vars)
   V <- V[!duplicated(names(V), fromLast = TRUE)]
-  f <- mrg_rhs(model, names(V))
+  f <- if (is.null(rhs)) mrg_rhs(model, names(V)) else rhs
   if (nonneg) {
     # For networks of concentrations: evaluate the rates at max(y, 0), so a
     # tiny negative excursion inside a trial step can't flip the sign of a
@@ -592,6 +643,7 @@ mrg_solve <- function(model, P = data.frame(row.names = 1), events = NULL, times
     grid <- sort(unique(c(0, ev$time[ev$time < min(grid)], grid)))
   }
   out_idx <- match(times, grid)
+  uses_t <- mrg_uses_time(model)
 
   Y <- mn$init
   # Optional starting state: a named vector (every subject) or a
@@ -628,8 +680,7 @@ mrg_solve <- function(model, P = data.frame(row.names = 1), events = NULL, times
     # After a bolus into a state that drives fast dynamics the step size
     # adapts down on its own; restarting it from h0 at every dose only costs
     # steps, so keep it unless it is larger than the coming segment.
-    seg <- rosenbrock_segment(f, Y, tj, grid[j + 1], V, u, h, rtol, atol,
-                              uses_t = mrg_uses_time(model))
+    seg <- rosenbrock_segment(f, Y, tj, grid[j + 1], V, u, h, rtol, atol, uses_t = uses_t)
     Y <- seg$Y
     h <- seg$h
   }
@@ -696,14 +747,13 @@ mrg_prepare <- function(model, P = data.frame(row.names = 1), nonneg = FALSE) {
   }
   Y <- mn$init
   rownames(Y) <- model$cmt
-  list(model = model, f = f, V = V, init = Y, m = m)
+  list(model = model, f = f, V = V, init = Y, m = m, uses_t = mrg_uses_time(model))
 }
 
 #' Advance a prepared model from t0 to t1 (no dosing inside the interval)
 mrg_advance <- function(prep, Y, t0, t1, h = 1e-4, rtol = 1e-6, atol = 1e-10) {
   u <- matrix(0, nrow(Y), ncol(Y))
-  seg <- rosenbrock_segment(prep$f, Y, t0, t1, prep$V, u, h, rtol, atol,
-                            uses_t = mrg_uses_time(prep$model))
+  seg <- rosenbrock_segment(prep$f, Y, t0, t1, prep$V, u, h, rtol, atol, uses_t = prep$uses_t)
   rownames(seg$Y) <- rownames(Y)
   seg
 }

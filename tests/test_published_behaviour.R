@@ -64,4 +64,66 @@ d <- mean(no$GLC[-1]) - mean(yes$GLC[-1])
 check(d > 1 && d < 4, sprintf("liraglutide 1.8 mg lowers mean daily glucose by 1-4 mM (%.1f)", d))
 check(max(yes$INS[-1]) > max(no$INS[-1]), "liraglutide raises meal-time insulin")
 
+# --- CAR-T cellular kinetics (Stein 2019) -------------------------------------
+m <- mrg_read("models/cart_tisagenlecleucel_stein2019.cpp")
+tt <- sort(unique(c(seq(0, 2000, by = 0.1), 9.3)))
+r <- mrg_solve(m, times = tt, rtol = 1e-7, atol = 1e-9)
+check(abs(max(r$CART) / 24000 - 1) < 1e-3 && abs(tt[which.max(r$CART)] - 9.3) < 0.11,
+      sprintf("typical patient peaks at Cmax 24,000 copies/ug on day 9.3 (%.0f, day %.1f)", max(r$CART), tt[which.max(r$CART)]))
+rho <- log(3900) / 9.3
+y <- as.vector(r$CART); auc <- sum(diff(tt) * (head(y, -1) + tail(y, -1)) / 2)
+auc_paper <- 24000 * (1 / rho + (1 - 0.0079) / 0.16 + 0.0079 / 0.0032)
+check(abs(auc / auc_paper - 1) < 0.02, sprintf("AUC matches the paper's closed form Cmax[1/rho + (1-FB)/alpha + FB/beta] (%.3g vs %.3g)", auc, auc_paper))
+toci <- mrg_solve(m, data.frame(TTOCI = 5), times = tt, rtol = 1e-7, atol = 1e-9)
+check(max(toci$CART) >= max(r$CART), "tocilizumab during expansion does not slow it (Ftoci = 1.2)")
+
+# --- PROTAC degradation (Pharmaceutics 2023) ------------------------------------
+m <- mrg_read("models/protac_degrader_kcat2023.cpp")
+conc <- c(sqrt(2500 * 71), 30 * sqrt(2500 * 71), 1)
+r <- mrg_solve(m, data.frame(CFIX = conc), times = c(0, 1000), rtol = 1e-7, atol = 1e-10)
+k <- 0.86 * 203 * 4.6 * 16 / log(2)
+dmax <- k / (k + 0.86 * 203 + 2500 + 71 + 2 * sqrt(2500 * 71))
+check(abs(r$DEG[2, 1] - dmax) < 1e-4, sprintf("steady-state degradation at DCmax equals Dmax from Appendix A (%.3f)", dmax))
+check(r$DEG[2, 2] < r$DEG[2, 1] && r$DEG[2, 3] < r$DEG[2, 1], "hook effect: less degradation above and below DCmax")
+check(abs(r$TM[2, 2] - 1) < 0.05, "with occupancy-driven inhibition, total modulation has no hook")
+
+# --- T-cell engager (Hosseini 2020) ----------------------------------------------
+m <- mrg_read("models/tce_mosunetuzumab_hosseini2020.cpp")
+tce <- function(mg) {
+  days <- c(0, 7, 14, 21)[mg > 0]; mg <- mg[mg > 0]
+  ev <- rbind(data.frame(time = days, cmt = "TDBc_ugperkg", amt = mg * 1000 / 70),
+              data.frame(time = days, cmt = "injection_effect", amt = 1),
+              data.frame(time = days, cmt = "drug_effect", amt = 1))
+  tt <- sort(unique(c(seq(0, 28, by = 0.1), outer(days, seq(0.002, 0.2, by = 0.004), "+"))))
+  list(t = tt, r = mrg_solve(m, events = ev, times = tt, rtol = 1e-5, atol = 1e-3))
+}
+base <- mrg_solve(m, times = seq(0, 28, by = 1), rtol = 1e-5, atol = 1e-3)
+check(max(abs(base$Bpb_perml / base$Bpb_perml[1] - 1)) < 1e-6, "without drug the cell populations stay at baseline")
+step <- tce(c(1, 2, 60, 60)); full <- tce(c(60, 0, 0, 60))
+p_step <- max(step$r$IL6combo[step$t < 21]); p_full <- max(full$r$IL6combo[full$t < 21])
+check(p_step < 0.6 * p_full, sprintf("step-up dosing lowers the cycle-1 IL-6 peak (%.0f vs %.0f pg/mL)", p_step, p_full))
+i21 <- which.min(abs(step$t - 21))
+check(step$r$Bpb_perml[i21, 1] / step$r$Bpb_perml[1, 1] < 0.01, "step-up dosing still depletes > 99% of blood B cells by day 21")
+
+# --- mRNA vaccine (Dasti 2025) -----------------------------------------------------
+m <- mrg_read("models/mrna_vaccine_dasti2025.cpp")
+source(file.path("apps", "mrna-vaccine", "R", "mrna_rhs.R"))
+source(file.path("apps", "mrna-vaccine", "R", "vaccines.R"))
+sahin <- read.csv(file.path("apps", "mrna-vaccine", "data", "sahin2020_bnt162b2.csv"))
+s <- vaccine_setup("bnt", 30, 21)
+r <- mrg_solve(m, s$P, s$ev, c(7, 21, 28, 42, 49, 84), rtol = 1e-4, atol = 1e-4, nonneg = TRUE, rhs = mrna_rhs(m))
+obs <- sahin[sahin$dose_ug == 30, ]
+ratio <- r$IGG[, 1] / obs$geomean_ng_per_mL[match(c(7, 21, 28, 42, 49, 84), obs$day)]
+# days 21, 42, 49 and 84; one week after the second dose (day 28) the model's
+# rise lags the data (it peaks about a week later), which the check records
+check(all(ratio[c(2, 4, 5, 6)] > 0.5 & ratio[c(2, 4, 5, 6)] < 2),
+      sprintf("BNT162b2 30 ug: IgG within 2-fold of the Sahin et al. geometric means on days 21, 42, 49, 84 (ratios %s)",
+              paste(sprintf("%.2f", ratio[c(2, 4, 5, 6)]), collapse = ", ")))
+check(ratio[3] > 0.2, sprintf("day 28, one week after the boost: model still rising (%.2f of the observed mean)", ratio[3]))
+pre <- readRDS(file.path("apps", "mrna-vaccine", "data", "presets.rds"))
+pk <- sapply(c(1, 10, 20, 30), function(dz) max(pre[[preset_id("bnt", dz, 21)]]$IGG))
+check(all(diff(pk) > 0), "peak antibody rises with dose from 1 to 30 ug")
+p30 <- pre[[preset_id("bnt", 30, 21)]]
+check(max(p30$IGG) / p30$IGG[which.min(abs(p30$time - 21))] > 5, "the second dose boosts antibody more than 5-fold")
+
 cat("PASS\n")

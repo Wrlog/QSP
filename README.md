@@ -1,6 +1,6 @@
 # Quantitative systems pharmacology models
 
-Four published quantitative systems pharmacology (QSP) models, each rebuilt from its
+Eight published quantitative systems pharmacology (QSP) models, each rebuilt from its
 original publication as an [mrgsolve](https://mrgsolve.org) model and given an
 interactive Shiny app that runs in the browser.
 
@@ -25,6 +25,10 @@ use or should guide the treatment of a patient.
 | [Bone](apps/bone) | Calcium and phosphate homeostasis, PTH and calcitriol, osteoblast/osteoclast remodelling via RANK-RANKL-OPG and TGF-beta. Peterson & Riggs, *Bone* 2010;46:49; *CPT:PSP* 2012;1:e14 | Denosumab, teriparatide | CTx, bone-specific ALP, serum calcium, PTH, lumbar-spine BMD |
 | [MAPK](apps/mapk) | EGFR-RAS-RAF-MEK-ERK signalling with four feedback loops, PI3K/AKT, tumour growth; 1000-patient virtual population. Kirouac et al., *npj Syst Biol Appl* 2017;3:14 | Cetuximab, vemurafenib, cobimetinib, GDC-0994 | Tumour size, RECIST response rates |
 | [Glucose](apps/glucose) | The 4GI model: glucose, insulin, GLP-1, glucagon and GIP with their feedbacks, healthy and type 2 diabetes. Bosch et al., *CPT:PSP* 2022;11:302 | Liraglutide | Glucose profile, insulin and hormone responses to meals |
+| [mRNA vaccine](apps/mrna-vaccine) | LNP uptake by innate cells, dendritic-cell maturation and migration, helper T cells, B cells in 17 affinity classes, germinal centres, memory and plasma cells; 220 equations. Dasti et al., *CPT:PSP* 2025 | BNT162b2, mRNA-1273 | Antibody (IgG) over a year, affinity maturation |
+| [T-cell engager](apps/tce) | CD20xCD3 bispecific: T-cell activation, B-cell killing, trafficking and margination across blood, spleen, lymph nodes, marrow and tumour; IL-6. Hosseini et al., *npj Syst Biol Appl* 2020;6:28 | Mosunetuzumab | IL-6 peak (cytokine release), B-cell depletion |
+| [CAR-T](apps/cart) | Cellular kinetics of a living drug: expansion, contraction, persistence, with between-patient variability, covariates, tocilizumab and steroids. Stein et al., *CPT:PSP* 2019;8:285 | Tisagenlecleucel | Transgene Cmax, Tmax, AUC0-28d, persistence |
+| [PROTAC](apps/protac) | Ternary-complex target engagement with cooperativity, catalytic degradation on top of target turnover, occupancy-driven inhibition and downstream response. *Pharmaceutics* 2023;15:195 | BTK degraders (Zorba et al. series) | Degradation, Dmax, DC50, hook effect |
 
 ### How each model was obtained
 
@@ -47,6 +51,32 @@ The goal was to carry over the published model exactly, not approximate it.
   from the population-PK models (Table S9), following the authors' script.
 - **Glucose:** transcribed from the final NONMEM control stream published with the
   article (Supplementary Material 2), using the final parameter estimates.
+- **mRNA vaccine:** translated by [tools/build_mrna_vaccine.py](tools/build_mrna_vaccine.py)
+  from the COSBI MATLAB code (github.com/cosbi-research/QSPmRNAVaccines, tissue
+  layer) and its fitted parameter files. The free lymph-node antigen, found with
+  `fzero` in the original, is found by Newton iteration. The COSBI licence allows
+  non-commercial use only, so [models/mrna_vaccine_dasti2025.cpp](models/mrna_vaccine_dasti2025.cpp)
+  and [apps/mrna-vaccine](apps/mrna-vaccine) carry it
+  ([apps/mrna-vaccine/LICENSE](apps/mrna-vaccine/LICENSE)). The standard schedules
+  are precomputed with mrgsolve ([tools/precompute_mrna_presets.R](tools/precompute_mrna_presets.R));
+  other schedules run live with a hand-vectorised right-hand side
+  ([apps/mrna-vaccine/R/mrna_rhs.R](apps/mrna-vaccine/R/mrna_rhs.R)), which the
+  tests check against the model file.
+- **T-cell engager:** the authors' SimBiology project (Supplementary Software) is
+  read without MATLAB by [tools/extract_simbiology.py](tools/extract_simbiology.py)
+  and turned into the model file by [tools/build_tce.py](tools/build_tce.py), with
+  the parameter variants their scripts activate plus the human physiology and PK.
+  The builder checks the result against every value in Supplementary Table 2
+  (human column). Rituximab, blinatumomab, subcutaneous dosing and BAFF are left
+  out. IL-6 production was calibrated in monkeys, so the app compares regimens
+  rather than reading absolute IL-6.
+- **CAR-T:** the published model (Table 1 and the MLXTRAN code in the Supplementary
+  Material) written as differential equations for the log levels. The data set
+  supplied with the article is simulated, not patient data, so it is not shown.
+- **PROTAC:** the kcat model's equations and Appendix A closed forms, with the
+  binding constants and cell parameters of Supplementary Tables S1-S2. The paper
+  is an in-vitro framework; the app's in-vivo tab adds a one-compartment PK model
+  with illustrative parameters, labelled as such.
 
 ## What the models reproduce
 
@@ -64,6 +94,17 @@ The goal was to carry over the published model exactly, not approximate it.
 - **Glucose:** a 75 g OGTT peaks at 12.7 mM in type 2 diabetes and 7.4 mM in
   healthy volunteers. Liraglutide 1.8 mg lowers mean daily glucose by 2.6 mM and
   raises meal-time insulin.
+- **mRNA vaccine:** BNT162b2 30 ug gives IgG within 1.3-fold of the trial's
+  geometric means before the second dose and on days 42-84 (Sahin et al. 2020).
+  One week after the second dose the model is still rising (0.4 of the observed
+  mean): its boost peaks about a week late. Peak antibody rises with dose.
+- **T-cell engager:** step-up dosing (1 / 2 / 60 mg) lowers the cycle-1 IL-6 peak
+  about three-fold against 60 mg on day 1, and still clears over 99% of blood B
+  cells by day 21 - the rationale for the trial's step-up schedule.
+- **CAR-T:** the typical patient peaks at 24,000 copies/ug on day 9.3, and the
+  AUC matches the paper's closed form.
+- **PROTAC:** steady-state degradation at DCmax equals the Appendix A Dmax; the
+  hook effect appears in degradation but not in total target modulation.
 
 ## Two engines, one model file
 
@@ -80,7 +121,10 @@ The About tab of each app says which engine is in use.
 
 `tests/test_engine_vs_mrgsolve.R` runs every model through both engines at the
 tolerances the apps use and fails if they differ by more than 0.2%. The current
-worst case is 0.07%, on the clotting-time test; everything else is within 0.01%.
+worst case is 0.07%, on the clotting-time test; everything else is within 0.02%.
+For many subjects with few states (CAR-T virtual patients) the solver inverts
+all the small systems at once; for large systems (the 220-equation vaccine) it
+reuses the matrix inverse while the step size is steady.
 
 ## Running it locally
 
@@ -123,5 +167,11 @@ mod <- mrgsolve::mread("glucose_4gi_bosch2022", project = "models")
 
 ## License
 
-MIT, except `models/bone_peterson_riggs.cpp` and `apps/bone/`, which are GPL-3
-because they derive from OpenBoneMin.
+MIT, except:
+
+- `models/bone_peterson_riggs.cpp` and `apps/bone/`: GPL-3, because they derive
+  from OpenBoneMin.
+- `models/mrna_vaccine_dasti2025.cpp`, `tools/build_mrna_vaccine.py`,
+  `tools/precompute_mrna_presets.R` and `apps/mrna-vaccine/`: COSBI Licence Terms
+  (non-commercial use only), because they derive from the COSBI Multiscale QSP
+  model for mRNA vaccines. See `apps/mrna-vaccine/LICENSE`.

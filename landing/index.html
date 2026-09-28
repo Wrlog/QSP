@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QSP Models</title>
-<meta name="description" content="Interactive quantitative systems pharmacology models - coagulation, bone, MAPK signalling in cancer and glucose regulation - rebuilt from their publications as mrgsolve models and run in the browser.">
+<meta name="description" content="Interactive quantitative systems pharmacology models - coagulation, bone, cancer signalling, glucose, mRNA vaccines, T-cell engagers, CAR-T and PROTACs - rebuilt from their publications as mrgsolve models and run in the browser.">
 <style>
   :root {
     --ink: #16181d; --ink-2: #454951; --ink-3: #6b7078; --rule: #e4e6ea;
@@ -81,6 +81,42 @@
       in healthy volunteers and type 2 diabetes, with a GLP-1 receptor agonist.</p>
       <a class="open" href="glucose/">Open the app</a>
       <div class="ref">Bosch R, Petrone M, Arends R, et al. CPT Pharmacometrics Syst Pharmacol 2022;11:302-317.</div>
+    </article>
+    <article class="card">
+      <h2>mRNA vaccines: from nanoparticle to antibody</h2>
+      <div class="tags"><span class="tag">220 equations</span><span class="tag">Germinal centres</span><span class="tag">Affinity maturation</span></div>
+      <p>LNP uptake by innate cells, dendritic-cell maturation, helper T cells, B cells in 17 affinity
+      classes and the antibody response to BNT162b2 and mRNA-1273, against trial data. Change dose,
+      interval and boosters.</p>
+      <a class="open" href="mrna-vaccine/">Open the app</a>
+      <div class="ref">Dasti A, et al. CPT Pharmacometrics Syst Pharmacol 2025. COSBI model, non-commercial licence.</div>
+    </article>
+    <article class="card">
+      <h2>PROTAC degraders and the hook effect</h2>
+      <div class="tags"><span class="tag">Ternary complex</span><span class="tag">Catalytic degradation</span><span class="tag">Dmax / DC50</span></div>
+      <p>Targeted protein degradation: ternary complex formation with cooperativity, catalytic
+      degradation on top of target turnover, and the hook effect. Predicts Dmax, DC50 and DCmax for a
+      series of BTK degraders from their binding constants.</p>
+      <a class="open" href="protac/">Open the app</a>
+      <div class="ref">A mechanistic pharmacodynamic modeling framework for PROTACs. Pharmaceutics 2023;15:195.</div>
+    </article>
+    <article class="card">
+      <h2>T-cell engager and cytokine release</h2>
+      <div class="tags"><span class="tag">Bispecific CD20xCD3</span><span class="tag">IL-6 / CRS</span><span class="tag">Step-up dosing</span></div>
+      <p>Mosunetuzumab tethers T cells to B cells across blood, spleen, lymph nodes and marrow.
+      Compares step-up and full first doses: B-cell killing, T-cell activation and margination,
+      and the IL-6 surge that drives cytokine release syndrome.</p>
+      <a class="open" href="tce/">Open the app</a>
+      <div class="ref">Hosseini I, Gadkar K, Stefanich E, et al. npj Syst Biol Appl 2020;6:28.</div>
+    </article>
+    <article class="card">
+      <h2>CAR-T cell kinetics</h2>
+      <div class="tags"><span class="tag">Cell therapy</span><span class="tag">Expansion / persistence</span><span class="tag">Virtual patients</span></div>
+      <p>Tisagenlecleucel expands thousands-fold, contracts, then persists for years. The population
+      model from the pediatric ALL trials, with its between-patient variability, covariates, and the
+      effect of tocilizumab and steroids on expansion.</p>
+      <a class="open" href="cart/">Open the app</a>
+      <div class="ref">Stein AM, Grupp SA, Levine JE, et al. CPT Pharmacometrics Syst Pharmacol 2019;8:285-295.</div>
     </article>
   </div>
 

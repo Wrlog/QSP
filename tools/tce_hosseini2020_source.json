@@ -1,0 +1,1353 @@
+{
+ "reactions": [
+  {
+   "reaction": "Btiss -> 2 Btiss",
+   "rate": "kBprolif*KBp*Bpbref_perml*Vtissue*(max(0, 1 - Btiss/(KBp*Bpbref_perml*Vtissue)))^1"
+  },
+  {
+   "reaction": "restTtiss + drugTtissact + BlinTtissact <-> actTtiss + drugTtissact + BlinTtissact",
+   "rate": "kTact*((drugTtissact+BlinTtissact)*restTtiss-fTadeact*actTtiss)"
+  },
+  {
+   "reaction": "Btiss -> null",
+   "rate": "0*fBprolif*kBprolif*Btiss*kBapop_cll"
+  },
+  {
+   "reaction": "TDBc_ugperkg <-> null",
+   "rate": "(Cl_tdb+Vm_tdb/(Km_tdb+TDBc_ugperkg/Vc_tdb)/BW)/Vc_tdb*TDBc_ugperkg"
+  },
+  {
+   "reaction": "TDBc_ugperkg <-> TDBp_ugperkg",
+   "rate": "Cld_tdb*(TDBc_ugperkg/Vc_tdb-TDBp_ugperkg/Vp_tdb)"
+  },
+  {
+   "reaction": "restTtiss + Btiss + drugTtissact + TDBt_ugperml -> restTtiss + Btiss + drugTtissact + TDBt_ugperml + restTtiss",
+   "rate": "0"
+  },
+  {
+   "reaction": "actTtiss + Btiss + drugBtisskill + TDBt_ugperml -> actTtiss + Btiss + drugBtisskill + TDBt_ugperml",
+   "rate": "0"
+  },
+  {
+   "reaction": "restTpb + injection_effect + drug_effect <-> restTtiss + injection_effect + drug_effect",
+   "rate": "tissue1on*kTrexit*Vpb*((1+finj*injection_effect+fdrug*drug_effect)*restTpb/Vpb*KTrp-restTtiss/Vtissue)"
+  },
+  {
+   "reaction": "totTpb_perml -> restTpb + totTpb_perml",
+   "rate": "kTgen*Vpb*Trpbref_perml*(fTgenbl+max(0,1-totTpb_perml/Trpbref_perml)^2)"
+  },
+  {
+   "reaction": "Bpb -> Btiss",
+   "rate": "tissue1on*fBexit*kTaexit*Vpb*max(0, Bpb/Vpb*KBp-Btiss/Vtissue)"
+  },
+  {
+   "reaction": "restTpb + drugTpbact + BlinTpbact <-> actTpb + drugTpbact + BlinTpbact",
+   "rate": "kTact*((drugTpbact+BlinTpbact)*restTpb-fTadeact*actTpb)"
+  },
+  {
+   "reaction": "Bpb -> 2 Bpb",
+   "rate": "tissue3on*fBtissue3_v1*kBapop*Bpb*kBapop_cll"
+  },
+  {
+   "reaction": "Bpb -> null",
+   "rate": "kBapop*Bpb*kBapop_cll"
+  },
+  {
+   "reaction": "TDBc_ugperml + drugTpbact + Bpb -> TDBc_ugperml + drugTpbact + Bpb",
+   "rate": "0"
+  },
+  {
+   "reaction": "TDBc_ugperml + actTpb + drugBpbkill + Bpb -> TDBc_ugperml + actTpb + drugBpbkill + Bpb",
+   "rate": "0"
+  },
+  {
+   "reaction": "actTpb + drugBpbkill + Bpb + RTXc_ugperml + BlinBpbkill -> actTpb + drugBpbkill + RTXc_ugperml + BlinBpbkill",
+   "rate": "kBkill*(drugBpbkill + BlinBpbkill + RTXc_ugperml/(Kmkill_rtx/1000+RTXc_ugperml))*Bpb"
+  },
+  {
+   "reaction": "actTtiss + drugBtisskill + Btiss + RTXt_ugperml + BlinBtisskill -> actTtiss + drugBtisskill + RTXt_ugperml + BlinBtisskill",
+   "rate": "fBkill*kBkill*(drugBtisskill + BlinBtisskill + RTXt_ugperml/(Kmkill_rtx/1000+RTXt_ugperml))*Btiss"
+  },
+  {
+   "reaction": "restTpb -> null",
+   "rate": "kTgen*fTgenbl*restTpb + fTrapop*kTaapop*max(0,restTpb-Trpbref_perml*Vpb)"
+  },
+  {
+   "reaction": "actTpb + injection_effect + drug_effect <-> actTtiss + injection_effect + drug_effect",
+   "rate": "tissue1on*kTaexit*Vpb*((1+fa0*(finj*injection_effect+fdrug*drug_effect))*actTpb/Vpb*KTrp*fTap-actTtiss/Vtissue)"
+  },
+  {
+   "reaction": "actTpb -> null",
+   "rate": "kTaapop*(actTpb + fAICD*actTpb^2/(Vpb*Trpbref_perml))"
+  },
+  {
+   "reaction": "BAFF + Btiss + Bpb + Btiss2 -> Btiss + Bpb + Btiss2",
+   "rate": "log(2)/(thBAFF/24/60)*(fBAFFo*BAFF/BAFFo+(1-fBAFFo)*(Btiss+ Bpb + Btiss2)/(Bpbref_perml*(Vpb+KBp*Vtissue + KBp2*Vtissue2)))"
+  },
+  {
+   "reaction": "null -> BAFF",
+   "rate": "log(2)/(thBAFF/24/60) * (fBAFFo+(1-fBAFFo)*Bpbo_perml/Bpbref_perml)"
+  },
+  {
+   "reaction": "act0Tpb -> restTpb",
+   "rate": "act0on*fTa0deact*act0Tpb"
+  },
+  {
+   "reaction": "act0Tpb + drugTpbact + BlinTpbact <-> actTpb + drugTpbact + BlinTpbact",
+   "rate": "act0on*kTact*((drugTpbact+BlinTpbact)*act0Tpb-fTadeact*actTpb)"
+  },
+  {
+   "reaction": "act0Tpb -> null",
+   "rate": "fTa0apop*kTaapop*act0Tpb"
+  },
+  {
+   "reaction": "act0Ttiss -> null",
+   "rate": "fTa0apop*kTaapop*act0Ttiss"
+  },
+  {
+   "reaction": "act0Ttiss + drugTtissact + BlinTtissact <-> actTtiss + drugTtissact + BlinTtissact",
+   "rate": "act0on*kTact*((drugTtissact+BlinTtissact)*act0Ttiss-fTadeact*actTtiss)"
+  },
+  {
+   "reaction": "act0Ttiss -> restTtiss",
+   "rate": "act0on*fTa0deact*act0Ttiss"
+  },
+  {
+   "reaction": "act0Tpb + injection_effect + drug_effect <-> act0Ttiss + injection_effect + drug_effect",
+   "rate": "tissue1on*act0on*kTrexit*Vpb*((1+finj*injection_effect+fdrug*drug_effect)*act0Tpb/Vpb*KTrp-act0Ttiss/Vtissue)"
+  },
+  {
+   "reaction": "actTpb -> actTpb + act0Tpb",
+   "rate": "act0on*fTaprolif*kTprolif*actTpb"
+  },
+  {
+   "reaction": "actTtiss -> actTtiss + act0Ttiss",
+   "rate": "act0on*fTaprolif*kTprolif*actTtiss"
+  },
+  {
+   "reaction": "injection_effect -> null",
+   "rate": "log(2)/tinjhalf*injection_effect"
+  },
+  {
+   "reaction": "actTtiss2 -> actTtiss2 + act0Ttiss2",
+   "rate": "act0on*fTaprolif*kTprolif*actTtiss2"
+  },
+  {
+   "reaction": "act0Tpb + injection_effect + drug_effect <-> act0Ttiss2 + injection_effect + drug_effect",
+   "rate": "tissue2on*act0on*kTrexit*Vpb*((1+finj*injection_effect+fdrug*drug_effect)*act0Tpb/Vpb*KTrp2-act0Ttiss2/Vtissue2)"
+  },
+  {
+   "reaction": "act0Ttiss2 -> restTtiss2",
+   "rate": "act0on*fTa0deact*act0Ttiss2"
+  },
+  {
+   "reaction": "act0Ttiss2 + drugTtissact2 + BlinTtissact2 <-> actTtiss2 + drugTtissact2 + BlinTtissact2",
+   "rate": "act0on*kTact*((drugTtissact2+BlinTtissact2)*act0Ttiss2-fTadeact*actTtiss2)"
+  },
+  {
+   "reaction": "act0Ttiss2 -> null",
+   "rate": "fTa0apop*kTaapop*act0Ttiss2"
+  },
+  {
+   "reaction": "actTpb + injection_effect + drug_effect <-> actTtiss2 + injection_effect + drug_effect",
+   "rate": "tissue2on*kTaexit*Vpb*((1+fa0*(finj*injection_effect+fdrug*drug_effect))*actTpb/Vpb*KTrp2*fTap-actTtiss2/Vtissue2)"
+  },
+  {
+   "reaction": "actTtiss2 + drugBtisskill2 + Btiss2 + RTXt2_ugperml + BlinBtisskill2 -> actTtiss2 + drugBtisskill2 + RTXt2_ugperml + BlinBtisskill2",
+   "rate": "fBkill*kBkill*(drugBtisskill2+ BlinBtisskill2 + RTXt2_ugperml/(Kmkill_rtx/1000+RTXt2_ugperml))*Btiss2"
+  },
+  {
+   "reaction": "Bpb -> Btiss2",
+   "rate": "tissue2on*fBexit*kTaexit*Vpb*max(0, Bpb/Vpb*KBp2-Btiss2/Vtissue2)"
+  },
+  {
+   "reaction": "restTpb + injection_effect + drug_effect <-> restTtiss2 + injection_effect + drug_effect",
+   "rate": "tissue2on*kTrexit*Vpb*((1+finj*injection_effect+fdrug*drug_effect)*restTpb/Vpb*KTrp2-restTtiss2/Vtissue2)"
+  },
+  {
+   "reaction": "actTtiss2 + Btiss2 + drugBtisskill2 + TDBt2_ugperml -> actTtiss2 + Btiss2 + drugBtisskill2 + TDBt2_ugperml",
+   "rate": "0"
+  },
+  {
+   "reaction": "restTtiss2 + Btiss2 + drugTtissact2 + TDBt2_ugperml -> restTtiss2 + Btiss2 + drugTtissact2 + TDBt2_ugperml",
+   "rate": "0"
+  },
+  {
+   "reaction": "Btiss2 -> null",
+   "rate": "0*fBprolif*kBprolif*Btiss2*kBapop_cll"
+  },
+  {
+   "reaction": "restTtiss2 + drugTtissact2 + BlinTtissact2 <-> actTtiss2 + drugTtissact2 + BlinTtissact2",
+   "rate": "kTact*((drugTtissact2+BlinTtissact2)*restTtiss2-fTadeact*actTtiss2)"
+  },
+  {
+   "reaction": "Btiss2 -> 2 Btiss2",
+   "rate": "kBprolif*KBp2*Bpbref_perml*Vtissue2*(max(0, 1 - Btiss2/(KBp2*Bpbref_perml*Vtissue2)))^1"
+  },
+  {
+   "reaction": "RTXc_ugperkg <-> RTXp_ugperkg",
+   "rate": "Cld_rtx*(RTXc_ugperkg/Vc_rtx-RTXp_ugperkg/Vp_rtx)"
+  },
+  {
+   "reaction": "RTXc_ugperkg <-> null",
+   "rate": "(Cl_rtx+Vm_rtx/(Km_rtx+RTXc_ugperkg/Vc_rtx)/BW)/Vc_rtx*RTXc_ugperkg"
+  },
+  {
+   "reaction": "drug_effect -> null",
+   "rate": "log(2)/tinjhalf*drug_effect"
+  },
+  {
+   "reaction": "null -> B19no20tiss3",
+   "rate": "Bpbref_perml*KBp3*B19no20_B1920_ratio*Vtissue3*(kBapop+(kBapop/kBmat_kBapop_ratio))* (1+5*(max(0, 1 - (Bpb+Btiss+Btiss2)/(Bpbref_perml*Vpb+KBp*Bpbo_perml*Vtissue+KBp2*Bpbo_perml*Vtissue2)))^1)"
+  },
+  {
+   "reaction": "B19no20tiss3 -> B1920tiss3",
+   "rate": "(kBapop/kBmat_kBapop_ratio)*B19no20tiss3"
+  },
+  {
+   "reaction": "B1920tiss3 -> Bpb",
+   "rate": "tissue3on*fBtissue3_v1*kBtiss3exit*Vpb*max(0,B1920tiss3/Vtissue3-Bpb/Vpb*KBp3)"
+  },
+  {
+   "reaction": "B19no20tiss3 -> null",
+   "rate": "kBapop*B19no20tiss3*kBapop_cll"
+  },
+  {
+   "reaction": "B1920tiss3 -> null",
+   "rate": "kBapop*B1920tiss3*kBapop_cll"
+  },
+  {
+   "reaction": "restTpb + injection_effect + drug_effect <-> restTtiss3 + drug_effect + injection_effect",
+   "rate": "tissue3on*kTrexit*Vpb*((1+finj*injection_effect+fdrug*drug_effect)*restTpb/Vpb*KTrp3-restTtiss3/Vtissue3)"
+  },
+  {
+   "reaction": "actTtiss3 + RTXt3_ugperml + drugBtisskill3 + B1920tiss3 + BlinBtisskill3 -> actTtiss3 + RTXt3_ugperml + drugBtisskill3 + BlinBtisskill3",
+   "rate": "fBkill*kBkill*(drugBtisskill3+ BlinBtisskill3 + RTXt3_ugperml/(Kmkill_rtx/1000+RTXt3_ugperml))*B1920tiss3"
+  },
+  {
+   "reaction": "act0Tpb + injection_effect + drug_effect <-> act0Ttiss3 + injection_effect + drug_effect",
+   "rate": "tissue3on*act0on*kTrexit*Vpb*((1+finj*injection_effect+fdrug*drug_effect)*act0Tpb/Vpb*KTrp3-act0Ttiss3/Vtissue3)"
+  },
+  {
+   "reaction": "actTpb + injection_effect + drug_effect <-> actTtiss3 + drug_effect + injection_effect",
+   "rate": "tissue3on*kTaexit*Vpb*((1+fa0*(finj*injection_effect+fdrug*drug_effect))*actTpb/Vpb*KTrp3*fTap-actTtiss3/Vtissue3)"
+  },
+  {
+   "reaction": "act0Ttiss3 -> null",
+   "rate": "fTa0apop*kTaapop*act0Ttiss3"
+  },
+  {
+   "reaction": "act0Ttiss3 + drugTtissact3 + BlinTtissact3 <-> actTtiss3 + drugTtissact3 + BlinTtissact3",
+   "rate": "act0on*kTact*((drugTtissact3+BlinTtissact3)*act0Ttiss3-fTadeact*actTtiss3)"
+  },
+  {
+   "reaction": "act0Ttiss3 -> restTtiss3",
+   "rate": "act0on*fTa0deact*act0Ttiss3"
+  },
+  {
+   "reaction": "restTtiss3 + drugTtissact3 + BlinTtissact3 <-> actTtiss3 + drugTtissact3 + BlinTtissact3",
+   "rate": "kTact*((drugTtissact3+BlinTtissact3)*restTtiss3-fTadeact*actTtiss3)"
+  },
+  {
+   "reaction": "actTtiss3 -> act0Ttiss3 + actTtiss3",
+   "rate": "act0on*fTaprolif*kTprolif*actTtiss3"
+  },
+  {
+   "reaction": "drugTtissact3 + TDBt3_ugperml + restTtiss3 + B1920tiss3 -> drugTtissact3 + TDBt3_ugperml + restTtiss3 + B1920tiss3",
+   "rate": "0"
+  },
+  {
+   "reaction": "B19no20tiss3 + actTtiss3 + BlinBtisskill3 -> actTtiss3 + BlinBtisskill3",
+   "rate": "fBkill*kBkill*BlinBtisskill3*B19no20tiss3"
+  },
+  {
+   "reaction": "drugBtisskill3 + TDBt3_ugperml + actTtiss3 + B1920tiss3 -> drugBtisskill3 + TDBt3_ugperml + actTtiss3 + B1920tiss3",
+   "rate": "0"
+  },
+  {
+   "reaction": "B19no20tiss3 + B1920tiss3 + B19tiss3 -> B1920tiss3 + B19no20tiss3 + B19tiss3",
+   "rate": "0"
+  },
+  {
+   "reaction": "restTtiss -> null",
+   "rate": "fapop_v24*fTrapop*kTaapop*(Trpbref_perml*Vtissue*KTrp)*max(0,restTtiss/(Trpbref_perml*Vtissue*KTrp)-1)"
+  },
+  {
+   "reaction": "restTtiss2 -> null",
+   "rate": "fapop_v24*fTrapop*kTaapop*(Trpbref_perml*Vtissue2*KTrp2)*max(0,restTtiss2/(Trpbref_perml*Vtissue2*KTrp2)-1)"
+  },
+  {
+   "reaction": "actTtiss -> null",
+   "rate": "fapop_v24*kTaapop*(actTtiss+fAICD*actTtiss^2/(KTrp*Vtissue*Trpbref_perml))"
+  },
+  {
+   "reaction": "actTtiss2 -> null",
+   "rate": "fapop_v24*kTaapop*(actTtiss2+fAICD*actTtiss2^2/(Vtissue2*KTrp2*Trpbref_perml))"
+  },
+  {
+   "reaction": "restTtiss3 -> null",
+   "rate": "fapop_v24*fTrapop*kTaapop*(Trpbref_perml*Vtissue3*KTrp3)*max(0,restTtiss3/(Trpbref_perml*Vtissue3*KTrp3)-1)"
+  },
+  {
+   "reaction": "actTtiss3 -> null",
+   "rate": "fapop_v24*kTaapop*(actTtiss3+fAICD*actTtiss3^2/(Vtissue3*KTrp3*Trpbref_perml))"
+  },
+  {
+   "reaction": "null -> Bpb",
+   "rate": "tissue3on*fBtissue3_v1*kBprolif*kBapop_cll*Bpbref_perml*Vpb*(max(0, 1 -Bpb/(Bpbref_perml*Vpb)))^1"
+  },
+  {
+   "reaction": "Blinc_ug <-> null",
+   "rate": "Cl_blin*Blinc_ug/Vz_blin"
+  },
+  {
+   "reaction": "Bpb + BlinBpbkill + actTpb + Blinc_ngperml -> Bpb + BlinBpbkill + actTpb + Blinc_ngperml",
+   "rate": "0"
+  },
+  {
+   "reaction": "Blinc_ngperml + BlinTpbact + Bpb + restTpb -> Blinc_ngperml + BlinTpbact + Bpb + restTpb",
+   "rate": "0"
+  },
+  {
+   "reaction": "Btiss + Blint_ngperml + actTtiss + BlinBtisskill -> BlinBtisskill + Blint_ngperml + actTtiss + Btiss",
+   "rate": "0"
+  },
+  {
+   "reaction": "Btiss + restTtiss + Blint_ngperml + BlinTtissact -> Blint_ngperml + Btiss + BlinTtissact + restTtiss",
+   "rate": "0"
+  },
+  {
+   "reaction": "Blint2_ngperml + BlinTtissact2 + Btiss2 + restTtiss2 -> Blint2_ngperml + BlinTtissact2 + Btiss2 + restTtiss2",
+   "rate": "0"
+  },
+  {
+   "reaction": "Blint2_ngperml + BlinBtisskill2 + Btiss2 + actTtiss2 -> BlinBtisskill2 + Blint2_ngperml + Btiss2 + actTtiss2",
+   "rate": "0"
+  },
+  {
+   "reaction": "BlinBtisskill3 + Blint3_ngperml + actTtiss3 + B19tiss3 -> BlinBtisskill3 + Blint3_ngperml + actTtiss3 + B19tiss3",
+   "rate": "0"
+  },
+  {
+   "reaction": "BlinTtissact3 + Blint3_ngperml + restTtiss3 + B19tiss3 -> BlinTtissact3 + Blint3_ngperml + restTtiss3 + B19tiss3",
+   "rate": "0"
+  },
+  {
+   "reaction": "null -> B1920tiss3",
+   "rate": "kBprolif*KBp3*Bpbref_perml*Vtissue3*(max(0, 1 - B1920tiss3/(KBp3*Bpbref_perml*Vtissue3)))^1"
+  },
+  {
+   "reaction": "null -> B19no20tiss3",
+   "rate": "kBprolif*KBp3*Bpbref_perml*B19no20_B1920_ratio*Vtissue3*(max(0, 1 - B19no20tiss3/(KBp3*Bpbref_perml*B19no20_B1920_ratio*Vtissue3)))^1"
+  },
+  {
+   "reaction": "act0Ttumor -> restTtumor",
+   "rate": "act0on*fTa0deact*act0Ttumor"
+  },
+  {
+   "reaction": "act0Ttumor + drugTtumoract + BlinTtumoract <-> actTtumor + drugTtumoract + BlinTtumoract",
+   "rate": "act0on*kTact*((drugTtumoract+BlinTtumoract)*act0Ttumor-fTadeact*actTtumor)"
+  },
+  {
+   "reaction": "actTtumor -> act0Ttumor + actTtumor",
+   "rate": "act0on*fTaprolif*kTprolif*actTtumor"
+  },
+  {
+   "reaction": "restTtumor + drugTtumoract + BlinTtumoract <-> actTtumor + drugTtumoract + BlinTtumoract",
+   "rate": "kTact*((drugTtumoract+BlinTtumoract)*restTtumor-fTadeact*actTtumor)"
+  },
+  {
+   "reaction": "BlinTtumoract + Blintumor_ngperml + restTtumor + Btumor -> BlinTtumoract + Blintumor_ngperml + Btumor + restTtumor",
+   "rate": "0"
+  },
+  {
+   "reaction": "Blintumor_ngperml + Btumor + BlinBtumorkill + actTtumor -> Blintumor_ngperml + BlinBtumorkill + actTtumor + Btumor",
+   "rate": "0"
+  },
+  {
+   "reaction": "drugTtumoract + Btumor + restTtumor + TDBtumor_ugperml -> drugTtumoract + Btumor + TDBtumor_ugperml + restTtumor",
+   "rate": "0"
+  },
+  {
+   "reaction": "TDBtumor_ugperml + Btumor + actTtumor + drugBtumorkill -> TDBtumor_ugperml + Btumor + drugBtumorkill + actTtumor",
+   "rate": "0"
+  },
+  {
+   "reaction": "Btumor -> 2 Btumor",
+   "rate": "kBtumorprolif*Btumor + 0*kBprolif*KBptumor*Bpbref_perml*Vtumor*(max(0, 1 - Btumor/(KBptumor*Bpbref_perml*Vtumor)))^1"
+  },
+  {
+   "reaction": "Btumor -> null",
+   "rate": "0*fBprolif*kBprolif*Btumor"
+  },
+  {
+   "reaction": "Btumor + actTtumor + BlinBtumorkill + drugBtumorkill + RTXtumor_ugperml -> actTtumor + BlinBtumorkill + drugBtumorkill + RTXtumor_ugperml",
+   "rate": "fBkill*kBkill*(drugBtumorkill+ BlinBtumorkill + RTXtumor_ugperml/(Kmkill_rtx/1000+RTXtumor_ugperml))*Btumor"
+  },
+  {
+   "reaction": "actTtumor -> null",
+   "rate": "fapop_v24*kTaapop*(actTtumor+fAICD*actTtumor^2/(Vtumor*KTrptumor*Trpbref_perml))"
+  },
+  {
+   "reaction": "Bpb -> Btumor",
+   "rate": "Bcell_tumor_trafficking_on*tumor_on*fBexit*kTaexit*Vpb*max(0, Bpb/Vpb*KBptumor-Btumor/Vtumor)"
+  },
+  {
+   "reaction": "restTpb + drug_effect + injection_effect <-> restTtumor + drug_effect + injection_effect",
+   "rate": "tumor_on*kTrexit*Vpb*((1+finj*injection_effect+fdrug*drug_effect)*restTpb/Vpb*KTrptumor-restTtumor/Vtumor)"
+  },
+  {
+   "reaction": "actTpb + drug_effect + injection_effect <-> actTtumor + injection_effect + drug_effect",
+   "rate": "tumor_on*kTaexit*Vpb*((1+fa0*(finj*injection_effect+fdrug*drug_effect))*actTpb/Vpb*KTrptumor*fTap-actTtumor/Vtumor)"
+  },
+  {
+   "reaction": "act0Tpb + drug_effect + injection_effect <-> act0Ttumor + injection_effect + drug_effect",
+   "rate": "tumor_on*act0on*kTrexit*Vpb*((1+finj*injection_effect+fdrug*drug_effect)*act0Tpb/Vpb*KTrptumor-act0Ttumor/Vtumor)"
+  },
+  {
+   "reaction": "act0Ttumor -> null",
+   "rate": "fTa0apop*kTaapop*act0Ttumor"
+  },
+  {
+   "reaction": "restTtumor -> null",
+   "rate": "fapop_v24*fTrapop*kTaapop*(Trpbref_perml*Vtumor*KTrptumor)*max(0,restTtumor/(Trpbref_perml*Vtumor*KTrptumor)-1)"
+  },
+  {
+   "reaction": "TDBsc_ugperkg -> TDBc_ugperkg",
+   "rate": "kabs_TDB*fbio_TDB*TDBsc_ugperkg"
+  },
+  {
+   "reaction": "TDBsc_ugperkg -> null",
+   "rate": "kabs_TDB*(1-fbio_TDB)*TDBsc_ugperkg"
+  },
+  {
+   "reaction": "null -> TDBc_ugperml_AUC",
+   "rate": "TDBc_ugperml"
+  },
+  {
+   "reaction": "null -> IL6pb",
+   "rate": "kIL6prod*actTpb/Vpb*(Bpb_perml/Bpbref_perml)*((TDBc_ugperml*1000)^ndrugactT/(KdrugactT^ndrugactT+(TDBc_ugperml*1000)^ndrugactT)+Blinc_ngperml^ndrugactT_blin/(Blinc_ngperml^ndrugactT_blin+KdrugactT_blin^ndrugactT_blin))"
+  },
+  {
+   "reaction": "IL6pb -> null",
+   "rate": "log(2)/(thalfIL6/60/24)*IL6pb"
+  },
+  {
+   "reaction": "null -> IL6tiss",
+   "rate": "kIL6prod*actTtiss/Vtissue*(Btiss_perml/(Bpbref_perml*KBp))*((TDBt_ugperml*1000)^ndrugactT/(KdrugactT^ndrugactT+(TDBt_ugperml*1000)^ndrugactT)+Blint_ngperml^ndrugactT_blin/(Blint_ngperml^ndrugactT_blin+KdrugactT_blin^ndrugactT_blin))"
+  },
+  {
+   "reaction": "IL6tiss -> null",
+   "rate": "log(2)/(thalfIL6/60/24)*IL6tiss"
+  },
+  {
+   "reaction": "null -> IL6tiss2",
+   "rate": "kIL6prod*actTtiss2/Vtissue2*(Btiss2_perml/(Bpbref_perml*KBp2))*((TDBt2_ugperml*1000)^ndrugactT/(KdrugactT^ndrugactT+(TDBt2_ugperml*1000)^ndrugactT)+Blint2_ngperml^ndrugactT_blin/(Blint2_ngperml^ndrugactT_blin+KdrugactT_blin^ndrugactT_blin))"
+  },
+  {
+   "reaction": "IL6tiss2 -> null",
+   "rate": "log(2)/(thalfIL6/60/24)*IL6tiss2"
+  },
+  {
+   "reaction": "null -> IL6tiss3",
+   "rate": "kIL6prod*actTtiss3/Vtissue3*((B1920tiss3_perml/(Bpbref_perml*KBp3))*((TDBt3_ugperml*1000)^ndrugactT/(KdrugactT^ndrugactT+(TDBt3_ugperml*1000)^ndrugactT))+(B19tiss3_perml/(Bpbref_perml*KBp3*(1+B19no20_B1920_ratio)))*(Blint3_ngperml^ndrugactT_blin/(Blint3_ngperml^ndrugactT_blin+KdrugactT_blin^ndrugactT_blin)))"
+  },
+  {
+   "reaction": "IL6tiss3 -> null",
+   "rate": "log(2)/(thalfIL6/60/24)*IL6tiss3"
+  },
+  {
+   "reaction": "null -> IL6tumor",
+   "rate": "kIL6prod*actTtumor/Vtumor*(Btumor_perml/(Bpbref_perml*KBptumor))*((TDBtumor_ugperml*1000)^ndrugactT/(KdrugactT^ndrugactT+(TDBtumor_ugperml*1000)^ndrugactT)+Blintumor_ngperml^ndrugactT_blin/(Blintumor_ngperml^ndrugactT_blin+KdrugactT_blin^ndrugactT_blin))"
+  },
+  {
+   "reaction": "IL6tumor -> null",
+   "rate": "log(2)/(thalfIL6/60/24)*IL6tumor"
+  }
+ ],
+ "rules": [
+  "restTpb = (1-depleteTpb)*Trpbo_perml*Vpb",
+  "restTtiss = KTrp*Trpbo_perml*Vtissue",
+  "restTtiss2 = KTrp2*Trpbo_perml*Vtissue2",
+  "restTtiss3 = KTrp3*Trpbo_perml*Vtissue3",
+  "restTtumor = KTrptumor*Trpbo_perml*Vtumor",
+  "Bpb = (1-depleteBpb)*Bpbo_perml*Vpb",
+  "Btiss = KBp*Bpbo_perml*Vtissue",
+  "Btiss2 = KBp2*Bpbo_perml*Vtissue2",
+  "B1920tiss3 = Bpbref_perml*KBp3*Vtissue3",
+  "B19no20tiss3 = Bpbref_perml*KBp3*B19no20_B1920_ratio*Vtissue3",
+  "Btumor = KBptumor*Bpbo_perml*Vtumor",
+  "BAFF = BAFFo",
+  "TDBc_ugperml = PK_v26(TDBc_ugperkg, Vc_tdb, PKflag, VPid, time, end_time, fvalidation)",
+  "TDBt_ugperml = Kp*TDBc_ugperml",
+  "TDBt2_ugperml = Kp2*TDBc_ugperml",
+  "TDBt3_ugperml = tissue3on*Kp3*TDBc_ugperml",
+  "TDBtumor_ugperml = tumor_on*Kptumor*TDBc_ugperml",
+  "RTXc_ugperml = (RTXc_ugperkg/Vc_rtx>1e-5)*RTXc_ugperkg/Vc_rtx",
+  "RTXt_ugperml = RTXc_ugperml*Kp",
+  "RTXt2_ugperml = RTXc_ugperml*Kp2",
+  "RTXt3_ugperml = tissue3on*RTXc_ugperml*Kp3",
+  "RTXtumor_ugperml = tumor_on*RTXc_ugperml*Kptumor",
+  "Blinc_ngperml = Blinc_ug/Vz_blin*1000",
+  "Blint_ngperml = Kp*Blinc_ngperml",
+  "Blint2_ngperml = Kp2*Blinc_ngperml",
+  "Blint3_ngperml = tissue3on*Kp3*Blinc_ngperml",
+  "Blintumor_ngperml = tumor_on*Kptumor*Blinc_ngperml",
+  "restTpb_perml = restTpb/Vpb",
+  "restTtiss_perml = restTtiss/Vtissue",
+  "restTtiss2_perml = restTtiss2/Vtissue2",
+  "restTtiss3_perml = restTtiss3/Vtissue3",
+  "restTtumor_perml = restTtumor/Vtumor",
+  "act0Tpb_perml = act0Tpb/Vpb",
+  "act0Ttiss_perml = act0Ttiss/Vtissue",
+  "act0Ttiss2_perml = act0Ttiss2/Vtissue2",
+  "act0Ttiss3_perml = act0Ttiss3/Vtissue3",
+  "act0Ttumor_perml = act0Ttumor/Vtumor",
+  "actTpb_perml = actTpb/Vpb",
+  "actTtiss_perml = actTtiss/Vtissue",
+  "actTtiss2_perml = actTtiss2/Vtissue2",
+  "actTtiss3_perml = actTtiss3/Vtissue3",
+  "actTtumor_perml = actTtumor/Vtumor",
+  "B19tiss3 = B19no20tiss3+B1920tiss3",
+  "Bpb_perml = Bpb/Vpb",
+  "Btiss_perml = Btiss/Vtissue",
+  "Btiss2_perml = Btiss2/Vtissue2",
+  "B19tiss3_perml = B19tiss3/Vtissue3",
+  "B1920tiss3_perml = B1920tiss3/Vtissue3",
+  "B19no20tiss3_perml = B19no20tiss3/Vtissue3",
+  "Btumor_perml = Btumor/Vtumor",
+  "BTrratio_pb = Bpb/max(restTpb+act0Tpb,1)",
+  "BTrratio_tiss = Btiss/max(restTtiss+act0Ttiss,1)",
+  "BTrratio_tiss2 = Btiss2/max(restTtiss2+act0Ttiss2,1)",
+  "B19Trratio_tiss3 = B19tiss3/max(restTtiss3+act0Ttiss3,1)",
+  "B1920Trratio_tiss3 = B1920tiss3/max(restTtiss3+act0Ttiss3,1)",
+  "BTrratio_tumor = Btumor/max(restTtumor+act0Ttumor,1)",
+  "TaBratio_pb = actTpb/max(Bpb,1)",
+  "TaBratio_tiss = actTtiss/max(Btiss,1)",
+  "TaBratio_tiss2 = actTtiss2/max(Btiss2,1)",
+  "TaB19ratio_tiss3 = actTtiss3/max(B19tiss3,1)",
+  "TaB1920ratio_tiss3 = actTtiss3/max(B1920tiss3,1)",
+  "TaBratio_tumor = actTtumor/max(Btumor,1)",
+  "Tafraction_pb = actTpb_perml/max(totTpb_perml,1)",
+  "Tafraction_tiss = actTtiss_perml/max(totTtiss_perml,1)",
+  "Tafraction_tiss2 = actTtiss2_perml/max(totTtiss2_perml,1)",
+  "Tafraction_tiss3 = actTtiss3_perml/max(totTtiss3_perml,1)",
+  "Tafraction_tumor = actTtumor_perml/max(totTtumor_perml,1)",
+  "totTpb_perml = restTpb_perml+act0Tpb_perml + actTpb_perml",
+  "totTtiss_perml = restTtiss_perml + act0Ttiss_perml + actTtiss_perml",
+  "totTtiss2_perml = restTtiss2_perml + act0Ttiss2_perml + actTtiss2_perml",
+  "totTtiss3_perml = restTtiss3_perml + act0Ttiss3_perml + actTtiss3_perml",
+  "totTtumor_perml = restTtumor_perml + act0Ttumor_perml + actTtumor_perml",
+  "drugTpbact = VmT*(BTrratio_pb^S/(KmBT_act^S+BTrratio_pb^S))*((TDBc_ugperml*1000)^ndrugactT/(KdrugactT^ndrugactT+(TDBc_ugperml*1000)^ndrugactT))",
+  "drugTtissact = fTact*VmT*(BTrratio_tiss^S/(KmBT_act^S+BTrratio_tiss^S))*((TDBt_ugperml*1000)^ndrugactT/(KdrugactT^ndrugactT+(TDBt_ugperml*1000)^ndrugactT))",
+  "drugTtissact2 = fTact*VmT*(BTrratio_tiss2^S/(KmBT_act^S+BTrratio_tiss2^S))*((TDBt2_ugperml*1000)^ndrugactT/(KdrugactT^ndrugactT+(TDBt2_ugperml*1000)^ndrugactT))",
+  "drugTtissact3 = fTact*VmT*(B1920Trratio_tiss3^S/(KmBT_act^S+B1920Trratio_tiss3^S))*((TDBt3_ugperml*1000)^ndrugactT/(KdrugactT^ndrugactT+(TDBt3_ugperml*1000)^ndrugactT))",
+  "drugTtumoract = fTact*VmT*(max(BTrratio_tumor, 0)^S/(KmBT_act^S+max(BTrratio_tumor, 0)^S))*((TDBtumor_ugperml*1000)^ndrugactT/(KdrugactT^ndrugactT+(TDBtumor_ugperml*1000)^ndrugactT))",
+  "drugBpbkill = VmB*max(0, TaBratio_pb)^nkill/(max(0, KmTB_kill)^nkill+max(0, TaBratio_pb)^nkill)*((TDBc_ugperml*1000)/(KdrugB+(TDBc_ugperml*1000)))",
+  "drugBtisskill = VmB*max(0, TaBratio_tiss)^nkill/(max(0, KmTB_kill*fKmTB_kill)^nkill+max(0, TaBratio_tiss)^nkill)*((TDBt_ugperml*1000)/(KdrugB+(TDBt_ugperml*1000)))",
+  "drugBtisskill2 = VmB*max(0, TaBratio_tiss2)^nkill/(max(0, KmTB_kill*fKmTB_kill)^nkill+max(0, TaBratio_tiss2)^nkill)*((TDBt2_ugperml*1000)/(KdrugB+(TDBt2_ugperml*1000)))",
+  "drugBtisskill3 = VmB*max(0,TaB1920ratio_tiss3)^nkill/(max(0,KmTB_kill*fKmTB_kill)^nkill+max(0,TaB1920ratio_tiss3)^nkill)*((TDBt3_ugperml*1000)/(KdrugB+(TDBt3_ugperml*1000)))",
+  "drugBtumorkill = VmB*max(0, TaBratio_tumor)^nkill/(max(0, KmTB_kill*fKmTB_kill)^nkill+max(0, TaBratio_tumor)^nkill)*((TDBtumor_ugperml*1000)/(KdrugB+(TDBtumor_ugperml*1000)))",
+  "BlinTpbact = VmT*(BTrratio_pb^S/(KmBT_act_blin^S+BTrratio_pb^S))*(Blinc_ngperml^ndrugactT_blin/(Blinc_ngperml^ndrugactT_blin+KdrugactT_blin^ndrugactT_blin))",
+  "BlinTtissact = fTact*VmT*(BTrratio_tiss^S/(KmBT_act_blin^S+BTrratio_tiss^S))*(Blint_ngperml^ndrugactT_blin/(Blint_ngperml^ndrugactT_blin+KdrugactT_blin^ndrugactT_blin))",
+  "BlinTtissact2 = fTact*VmT*(BTrratio_tiss2^S/(KmBT_act_blin^S+BTrratio_tiss2^S))*(Blint2_ngperml^ndrugactT_blin/(Blint2_ngperml^ndrugactT_blin+KdrugactT_blin^ndrugactT_blin))",
+  "BlinTtissact3 = fTact*VmT*(B19Trratio_tiss3^S/(KmBT_act_blin^S+B19Trratio_tiss3^S))*(Blint3_ngperml^ndrugactT_blin/(Blint3_ngperml^ndrugactT_blin+KdrugactT_blin^ndrugactT_blin))",
+  "BlinTtumoract = fTact*VmT*(max(BTrratio_tumor,0)^S/(KmBT_act_blin^S+max(BTrratio_tumor, 0)^S))*(Blintumor_ngperml^ndrugactT_blin/(Blintumor_ngperml^ndrugactT_blin+KdrugactT_blin^ndrugactT_blin))",
+  "BlinBpbkill = VmB*max(0, TaBratio_pb)^nkill_blin/(max(0, KmTB_kill_blin)^nkill_blin+max(0, TaBratio_pb)^nkill_blin)*(Blinc_ngperml/(KdrugB_blin+Blinc_ngperml))",
+  "BlinBtisskill = VmB*max(0, TaBratio_tiss)^nkill_blin/(max(0, KmTB_kill_blin*fKmTB_kill)^nkill_blin+max(0, TaBratio_tiss)^nkill_blin)*(Blint_ngperml/(KdrugB_blin+Blint_ngperml))",
+  "BlinBtisskill2 = VmB*max(0, TaBratio_tiss2)^nkill_blin/(max(0, KmTB_kill_blin*fKmTB_kill)^nkill_blin+max(0, TaBratio_tiss2)^nkill_blin)*(Blint2_ngperml/(KdrugB_blin+Blint2_ngperml))",
+  "BlinBtisskill3 = VmB*max(0,TaB19ratio_tiss3)^nkill_blin/(max(0,KmTB_kill_blin*fKmTB_kill)^nkill_blin+max(0,TaB19ratio_tiss3)^nkill_blin)*(Blint3_ngperml/(KdrugB_blin+Blint3_ngperml))",
+  "BlinBtumorkill = VmB*max(0, TaBratio_tumor)^nkill_blin/(max(0, KmTB_kill_blin*fKmTB_kill)^nkill_blin+max(0, TaBratio_tumor)^nkill_blin)*(Blintumor_ngperml/(KdrugB_blin+Blintumor_ngperml))",
+  "Bpb_norm = Bpb_perml/Bpbref_perml",
+  "totTtiss = restTtiss + act0Ttiss + actTtiss",
+  "totTtiss2 = restTtiss2 + act0Ttiss2 + actTtiss2",
+  "totTtiss3 = restTtiss3 + act0Ttiss3 + actTtiss3",
+  "totTtumor = restTtumor + act0Ttumor + actTtumor",
+  "Baffconsumption = log(2)/thBAFF*BAFF*(Btiss+Bpb + Btiss2)/(Bpbref_perml*(Vpb+KBp*Vtissue+KBp2*Vtissue2))",
+  "BTtotRatio_tiss = Btiss_perml/totTtiss_perml",
+  "BTtotRatio_tiss2 = Btiss2_perml/totTtiss2_perml",
+  "unnamed.IL6combo = IL6pb+IL6_tiss_contribution*(IL6tiss*Vtissue+IL6tiss2*Vtissue2+IL6tiss3*Vtissue3+IL6tumor*Vtumor)/Vpb"
+ ],
+ "parameters": {
+  "actTtiss": 12,
+  "Btiss": 15,
+  "TDBc_ugperkg": 4,
+  "actTpb": 14,
+  "drugBtisskill": 3,
+  "drugTtissact": 4,
+  "restTtiss": 10,
+  "TDBp_ugperkg": 1,
+  "restTpb": 12,
+  "Bpb": 19,
+  "TDBc_ugperml": 11,
+  "TDBt_ugperml": 6,
+  "drugTpbact": 4,
+  "drugBpbkill": 3,
+  "restTtiss_perml": 2,
+  "actTtiss_perml": 3,
+  "Btiss_perml": 3,
+  "restTpb_perml": 2,
+  "actTpb_perml": 3,
+  "Bpb_perml": 3,
+  "BTrratio_pb": 3,
+  "BTrratio_tiss": 3,
+  "TaBratio_pb": 3,
+  "TaBratio_tiss": 3,
+  "Tafraction_pb": 1,
+  "totTpb_perml": 3,
+  "totTtiss_perml": 3,
+  "act0Ttiss_perml": 2,
+  "act0Tpb_perml": 2,
+  "Tafraction_tiss": 1,
+  "BAFF": 4,
+  "Baffconsumption": 1,
+  "act0Tpb": 10,
+  "act0Ttiss": 8,
+  "injection_effect": 13,
+  "Btiss2": 15,
+  "act0Tpb_1": 0,
+  "Bpb_1": 0,
+  "restTpb_1": 0,
+  "actTpb_1": 0,
+  "act0Ttiss2": 8,
+  "restTtiss2": 10,
+  "TDBt2_ugperml": 6,
+  "drugTtissact2": 4,
+  "drugBtisskill2": 3,
+  "actTtiss2": 12,
+  "Tafraction_tiss2": 1,
+  "act0Ttiss2_perml": 2,
+  "totTtiss2_perml": 3,
+  "TaBratio_tiss2": 3,
+  "BTrratio_tiss2": 3,
+  "Btiss2_perml": 3,
+  "actTtiss2_perml": 3,
+  "restTtiss2_perml": 2,
+  "RTXc_ugperkg": 3,
+  "RTXp_ugperkg": 1,
+  "RTXc_ugperml": 6,
+  "RTXt_ugperml": 2,
+  "RTXt2_ugperml": 2,
+  "drug_effect": 13,
+  "B1920tiss3": 13,
+  "B19no20tiss3": 9,
+  "restTtiss3": 11,
+  "act0Ttiss3": 9,
+  "actTtiss3": 14,
+  "drugTtissact3": 4,
+  "TDBt3_ugperml": 6,
+  "B19Trratio_tiss3": 2,
+  "B19tiss3": 7,
+  "restTtiss3_perml": 2,
+  "act0Ttiss3_perml": 2,
+  "actTtiss3_perml": 3,
+  "B19tiss3_perml": 2,
+  "Tafraction_tiss3": 1,
+  "totTtiss3_perml": 2,
+  "TaB19ratio_tiss3": 2,
+  "B19TtotRatio_tiss3": 0,
+  "RTXt3_ugperml": 2,
+  "drugBtisskill3": 3,
+  "TaB1920ratio_tiss3": 2,
+  "B1920tiss3_perml": 2,
+  "B1920Trratio_tiss3": 2,
+  "B19no20tiss3_perml": 1,
+  "Blinc_ug": 2,
+  "Blinc_ngperml": 10,
+  "BlinTpbact": 4,
+  "BlinBpbkill": 3,
+  "BlinTtissact": 4,
+  "BlinBtisskill": 3,
+  "Blint_ngperml": 6,
+  "Blint2_ngperml": 6,
+  "BlinBtisskill2": 3,
+  "BlinTtissact2": 4,
+  "BlinBtisskill3": 4,
+  "Blint3_ngperml": 6,
+  "BlinTtissact3": 4,
+  "Bpb_norm": 1,
+  "Tafraction_pb_init": 0,
+  "totTtiss": 1,
+  "totTtiss2": 1,
+  "totTtiss3": 1,
+  "restTtumor": 10,
+  "actTtumor": 12,
+  "Btumor": 12,
+  "act0Ttumor": 8,
+  "drugTtumoract": 4,
+  "drugBtumorkill": 3,
+  "BlinTtumoract": 4,
+  "BlinBtumorkill": 3,
+  "TDBtumor_ugperml": 6,
+  "restTtumor_perml": 2,
+  "act0Ttumor_perml": 2,
+  "actTtumor_perml": 3,
+  "Btumor_perml": 2,
+  "Tafraction_tumor": 1,
+  "BTrratio_tumor": 3,
+  "TaBratio_tumor": 3,
+  "totTtumor": 1,
+  "totTtumor_perml": 2,
+  "Blintumor_ngperml": 6,
+  "RTXtumor_ugperml": 2,
+  "BTtotRatio_tiss": 1,
+  "BTtotRatio_tiss2": 1,
+  "TDBsc_ugperkg": 2,
+  "TDBc_ugperml_AUC": 1,
+  "IL6pb": 3,
+  "IL6tiss": 3,
+  "IL6tiss2": 3,
+  "IL6tiss3": 3,
+  "IL6tumor": 3,
+  "IL6combo": 1,
+  "initialTdepleted": 0,
+  "Tgeneration": 0,
+  "initialBdepleted": 0,
+  "tissue3": 0,
+  "validation": 0,
+  "tissue3_v2": 0,
+  "VmB": 0.95,
+  "KmTB_kill": 0.75,
+  "KdrugB": 10,
+  "kBapop": 0.03,
+  "kBprolif": 0.7,
+  "kTprolif": 0.7,
+  "kBkill": 1,
+  "KdrugactT": 50,
+  "VmT": 0.9,
+  "KmBT_act": 0.1,
+  "kTaexit": 1,
+  "kTact": 1,
+  "fTadeact": 0,
+  "fTap": 1,
+  "Cl_tdb": 3,
+  "Cld_tdb": 25,
+  "Vc_tdb": 35,
+  "Vp_tdb": 110,
+  "kTgen": 1,
+  "kTaapop": 0.5,
+  "KTrp": 1,
+  "Trpbo_perml": 2000000,
+  "fTaprolif": 2,
+  "fBprolif": 0,
+  "Bpbo_perml": 1000000,
+  "fBexit": 1,
+  "KBp": 1,
+  "Kp": 0.14,
+  "Vpb": 40,
+  "Vtissue": 40,
+  "fTrapop": 0.1,
+  "Trpbref_perml": 2000000,
+  "nkill": 2,
+  "KTrp2": 0.02,
+  "Vm_tdb": 212,
+  "Km_tdb": 4.74,
+  "BW": 3.4,
+  "act0on": 1,
+  "kIL6prod": 1,
+  "fa0": 0.5,
+  "fAICD": 1,
+  "kBAFFprod": 1,
+  "Bpbref_perml": 1000000,
+  "thBAFF": 30,
+  "thalfIL6": 20,
+  "fTa0deact": 1,
+  "fTa0apop": 1,
+  "BAFFo": 1,
+  "fBAFFo": 0.1,
+  "tinjhalf": 1,
+  "finj": 0.1,
+  "KBp2": 1,
+  "Vtissue2": 1,
+  "Kp2": 0.07,
+  "tissue2on": 0,
+  "Vc_rtx": 28,
+  "Vp_rtx": 9,
+  "Cl_rtx": 8,
+  "Cld_rtx": 23,
+  "Vm_rtx": 0,
+  "Km_rtx": 1,
+  "Kmkill_rtx": 25,
+  "fTgenbl": 0,
+  "depleteTpb": 0,
+  "depleteBpb": 0,
+  "kTrexit": 1,
+  "PKflag": 1,
+  "VPid": 1,
+  "end_time": 1,
+  "fdrug": 1,
+  "Vtissue3": 1,
+  "KTrp3": 500,
+  "tissue3on": 0,
+  "Kp3": 0.07,
+  "kBtiss3exit": 0.03,
+  "KBp3": 600,
+  "B19no20_B1920_ratio": 0.25,
+  "fvalidation": 0,
+  "fapop_v24": 0,
+  "fBtissue3_v1": 1,
+  "kBmat_kBapop_ratio": 0.25,
+  "ndrugactT": 1,
+  "Cl_blin": 22300,
+  "Vz_blin": 1610,
+  "KdrugactT_blin": 0.1,
+  "ndrugactT_blin": 1,
+  "KmTB_kill_blin": 0.75,
+  "KdrugB_blin": 0.015,
+  "nkill_blin": 1.027,
+  "KmBT_act_blin": 0.716,
+  "kBapop_cll": 1,
+  "kBgen_cll": 1,
+  "fBkill": 1,
+  "fTact": 1,
+  "fKmTB_kill": 1,
+  "Kptumor": 1,
+  "Vtumor": 1,
+  "KBptumor": 1,
+  "KTrptumor": 1,
+  "tumor_on": 0,
+  "IL6_tiss_contribution": 0.02,
+  "kBtumorprolif": 0.025,
+  "S": 1,
+  "tissue1on": 1,
+  "kabs_TDB": 1.4,
+  "fbio_TDB": 0.6,
+  "Bcell_tumor_trafficking_on": 1
+ },
+ "variants": [
+  {
+   "values": {
+    "fTaprolif": 0.65,
+    "kTaapop": 0.05,
+    "fTrapop": 5000,
+    "fTa0apop": 1,
+    "fa0": 0,
+    "fAICD": 1,
+    "kTact": 4,
+    "fTadeact": 0.01,
+    "fTa0deact": 0.1,
+    "kBkill": 10000,
+    "kTaexit": 100,
+    "finj": 0.1,
+    "fBexit": 0,
+    "kTgen": 0,
+    "KdrugactT": 150,
+    "KdrugB": 10,
+    "KmBT_act": 1,
+    "nkill": 2,
+    "Trpbo_perml": 2000000,
+    "Bpbo_perml": 1000000,
+    "kBapop": 0.015,
+    "kBprolif": 0.7,
+    "fBprolif": 0,
+    "act0on": 1
+   },
+   "name": "act0 unopt"
+  },
+  {
+   "values": {
+    "Vpb": 380,
+    "Trpbo_perml": 2000000,
+    "Trpbref_perml": 2000000,
+    "Bpbo_perml": 1000000,
+    "Bpbref_perml": 1000000,
+    "tissue1on": 1,
+    "Vtissue": 7,
+    "KTrp": 500,
+    "fTap": 11.1,
+    "KBp": 900,
+    "tissue2on": 1,
+    "Vtissue2": 25,
+    "KTrp2": 500,
+    "KBp2": 600
+   },
+   "name": "combo tissues 1"
+  },
+  {
+   "values": {
+    "fTaprolif": 0.63,
+    "kTaapop": 0.05,
+    "fTrapop": 3.8,
+    "fTa0apop": 1.3,
+    "fa0": 0.26,
+    "fAICD": 1,
+    "kTact": 9.23,
+    "fTadeact": 0.1,
+    "fTa0deact": 0.02,
+    "kBkill": 915,
+    "kTaexit": 6577,
+    "fBexit": 0,
+    "kTgen": 1,
+    "KdrugactT": 122,
+    "KdrugB": 0.3,
+    "KmBT_act": 0.43,
+    "nkill": 1,
+    "Trpbo_perml": 2000000,
+    "Bpbo_perml": 1000000,
+    "kBapop": 0.015,
+    "kBprolif": 0.7,
+    "fBprolif": 0,
+    "act0on": 1,
+    "finj": 0.66
+   },
+   "name": "act optimizn 1"
+  },
+  {
+   "values": {
+    "fTaprolif": 9.5,
+    "kTaapop": 0.4,
+    "fTrapop": 33,
+    "fTa0apop": 3.2,
+    "fa0": 0.54,
+    "fAICD": 1,
+    "kTact": 7.6,
+    "fTadeact": 0.001,
+    "fTa0deact": 1,
+    "kBkill": 470,
+    "kTaexit": 1,
+    "fBexit": 0,
+    "kTgen": 1,
+    "KdrugactT": 40,
+    "KdrugB": 7.5,
+    "KmBT_act": 5.7,
+    "nkill": 1,
+    "Trpbo_perml": 2000000,
+    "Bpbo_perml": 1000000,
+    "kBapop": 0.015,
+    "kBprolif": 0.7,
+    "fBprolif": 0,
+    "act0on": 1,
+    "finj": 0.2
+   },
+   "name": "act optimizn 2a"
+  },
+  {
+   "values": {
+    "Vpb": 380,
+    "Trpbo_perml": 2000000,
+    "Trpbref_perml": 2000000,
+    "Bpbo_perml": 1000000,
+    "Bpbref_perml": 1000000,
+    "tissue1on": 1,
+    "Vtissue": 7,
+    "KTrp": 500,
+    "fTap": 2.4,
+    "KBp": 900,
+    "tissue2on": 1,
+    "Vtissue2": 25,
+    "KTrp2": 500,
+    "KBp2": 600
+   },
+   "name": "combo tissues 2a"
+  },
+  {
+   "values": {
+    "fTaprolif": 3.76,
+    "kTaapop": 0.3,
+    "fTrapop": 446,
+    "fTa0apop": 0.3,
+    "fa0": 0.24,
+    "fAICD": 1,
+    "kTact": 1.9,
+    "fTadeact": 0.004,
+    "fTa0deact": 0.012,
+    "kBkill": 661,
+    "kTaexit": 158,
+    "fBexit": 0,
+    "kTgen": 1,
+    "KdrugactT": 163,
+    "KdrugB": 0.4,
+    "KmBT_act": 0.025,
+    "nkill": 1.44,
+    "Trpbo_perml": 2000000,
+    "Bpbo_perml": 1000000,
+    "kBapop": 0.015,
+    "kBprolif": 0.7,
+    "fBprolif": 0,
+    "act0on": 1,
+    "finj": 0.44
+   },
+   "name": "act optimizn 2b"
+  },
+  {
+   "values": {
+    "Vpb": 380,
+    "Trpbo_perml": 2000000,
+    "Trpbref_perml": 2000000,
+    "Bpbo_perml": 1000000,
+    "Bpbref_perml": 1000000,
+    "tissue1on": 1,
+    "Vtissue": 7,
+    "KTrp": 500,
+    "fTap": 2.6,
+    "KBp": 900,
+    "tissue2on": 1,
+    "Vtissue2": 25,
+    "KTrp2": 500,
+    "KBp2": 600
+   },
+   "name": "combo tissues 2b"
+  },
+  {
+   "values": {
+    "depleteTpb": 1
+   },
+   "name": "initialTdepleted"
+  },
+  {
+   "values": {
+    "fTgenbl": 0,
+    "kTgen": 1
+   },
+   "name": "Tgeneration"
+  },
+  {
+   "values": {
+    "fTgenbl": 1,
+    "kTgen": 1
+   },
+   "name": "Tgeneration 2b"
+  },
+  {
+   "values": {
+    "fTaprolif": 10,
+    "kTaapop": 0.4,
+    "fTrapop": 24,
+    "fTa0apop": 2.4,
+    "fa0": 0.017,
+    "fAICD": 1,
+    "kTact": 7.6,
+    "fTadeact": 0.001,
+    "fTa0deact": 1,
+    "kBkill": 470,
+    "kTaexit": 1,
+    "fBexit": 0,
+    "kTgen": 1,
+    "KdrugactT": 100,
+    "KdrugB": 7.5,
+    "KmBT_act": 5.7,
+    "nkill": 1,
+    "Trpbo_perml": 2000000,
+    "Bpbo_perml": 1000000,
+    "kBapop": 0.03,
+    "kBprolif": 0.7,
+    "fBprolif": 0,
+    "act0on": 1,
+    "fdrug": 5.26
+   },
+   "name": "act optimizn 2a_modified"
+  },
+  {
+   "values": {
+    "depleteBpb": 1
+   },
+   "name": "initialBdepleted"
+  },
+  {
+   "values": {
+    "kTrexit": 0.03,
+    "finj": 1.2
+   },
+   "name": "finj optimization"
+  },
+  {
+   "values": {
+    "KTrp3": 50,
+    "KBp3": 60,
+    "tissue3on": 1,
+    "Vtissue3": 50,
+    "kBtiss3exit": 0.041,
+    "fBtissue3_v1": 1,
+    "kBmat_kBapop_ratio": 0.25
+   },
+   "name": "tissue3"
+  },
+  {
+   "values": {
+    "fvalidation": 1
+   },
+   "name": "validation"
+  },
+  {
+   "values": {
+    "fTaprolif": 9.806,
+    "kTaapop": 0.639,
+    "fTrapop": 0.249,
+    "fTa0apop": 0.313,
+    "fa0": 0.002,
+    "fAICD": 22.027,
+    "kTact": 8.278,
+    "fTadeact": 0.002,
+    "fTa0deact": 1,
+    "kBkill": 510.411,
+    "kTaexit": 1.506,
+    "KdrugactT": 600,
+    "KdrugB": 0.228,
+    "nkill": 1.002,
+    "KmBT_act": 3.681,
+    "fTap": 1.52,
+    "kBapop": 0.182,
+    "fdrug": 6.999,
+    "kTrexit": 0.056,
+    "finj": 0.585,
+    "fapop_v24": 1,
+    "ndrugactT": 0.7,
+    "fBkill": 0.001959
+   },
+   "name": "act optimizn v24"
+  },
+  {
+   "values": {
+    "KTrp3": 50,
+    "KBp3": 60,
+    "tissue3on": 1,
+    "Vtissue3": 50,
+    "kBtiss3exit": 1,
+    "fBtissue3_v1": 0,
+    "kBmat_kBapop_ratio": 0.2218935,
+    "kBapop": 0.005
+   },
+   "name": "tissue3_v2"
+  },
+  {
+   "values": {
+    "fBexit": 1
+   },
+   "name": "B cell migration"
+  },
+  {
+   "values": {
+    "kBprolif": 0.02
+   },
+   "name": "B cell proliferation"
+  },
+  {
+   "values": {
+    "Vpb": 5000,
+    "Vtissue": 210,
+    "Vtissue2": 400,
+    "Vtissue3": 500,
+    "Trpbref_perml": 500000,
+    "Trpbo_perml": 500000,
+    "Bpbref_perml": 500000,
+    "Bpbo_perml": 500000,
+    "KTrp": 200,
+    "KBp": 333,
+    "KTrp2": 190,
+    "KBp2": 190,
+    "KTrp3": 60,
+    "KBp3": 80,
+    "Cl_tdb": 1.5
+   },
+   "name": "human parameters"
+  },
+  {
+   "values": {
+    "Vpb": 5000,
+    "Vtissue": 210,
+    "Vtissue2": 400,
+    "Vtissue3": 500,
+    "Trpbref_perml": 200000,
+    "Trpbo_perml": 200000,
+    "Bpbref_perml": 70000,
+    "Bpbo_perml": 70000,
+    "KTrp": 200,
+    "KBp": 333,
+    "KTrp2": 190,
+    "KBp2": 190,
+    "KTrp3": 60,
+    "KBp3": 80,
+    "Cl_tdb": 1.5
+   },
+   "name": "human ALL parameters"
+  },
+  {
+   "values": {
+    "KdrugactT_blin": 0.1,
+    "ndrugactT_blin": 1,
+    "KmBT_act_blin": 0.716,
+    "KdrugB_blin": 0.15,
+    "nkill_blin": 1.027,
+    "KmTB_kill_blin": 0.75
+   },
+   "name": "Blin parameters"
+  },
+  {
+   "values": {
+    "Vpb": 5000,
+    "Vtissue": 210,
+    "Vtissue2": 400,
+    "Vtissue3": 500,
+    "Trpbref_perml": 500000,
+    "Trpbo_perml": 500000,
+    "Bpbref_perml": 500000,
+    "Bpbo_perml": 500000,
+    "KTrp": 200,
+    "KBp": 333,
+    "KTrp2": 190,
+    "KBp2": 190,
+    "KTrp3": 60,
+    "KBp3": 80,
+    "Cl_tdb": 1.5,
+    "kBapop_cll": 0.1215
+   },
+   "name": "human CLL parameters"
+  },
+  {
+   "values": {
+    "fTaprolif": 2.106,
+    "kTaapop": 0.061,
+    "fTrapop": 0.2,
+    "fTa0apop": 2.019,
+    "fa0": 0.002,
+    "fAICD": 1.497,
+    "kTact": 9.828,
+    "fTadeact": 0.005,
+    "fTa0deact": 0.001,
+    "kBkill": 275.189,
+    "kTaexit": 0.123,
+    "KdrugactT": 130.083,
+    "KdrugB": 1.302,
+    "nkill": 1.027,
+    "KmBT_act": 0.716,
+    "fTap": 3.773,
+    "kBapop": 0.02,
+    "fdrug": 6.3839,
+    "kTrexit": 0.045,
+    "finj": 1,
+    "kBprolif": 0.05,
+    "fBexit": 0.333,
+    "fBkill": 0.1,
+    "fTact": 0.25,
+    "fKmTB_kill": 10,
+    "S": 1.4,
+    "ndrugactT": 0.8,
+    "fapop_v24": 1,
+    "IL6_tiss_contribution": 0.003
+   },
+   "name": "act optimizn v22_2"
+  },
+  {
+   "values": {
+    "Trpbref_perml": 500000,
+    "Trpbo_perml": 500000,
+    "Bpbref_perml": 250000,
+    "Bpbo_perml": 250000
+   },
+   "name": "human DLBCL parameters"
+  },
+  {
+   "values": {
+    "Cl_tdb": 8.5,
+    "Cld_tdb": 24.17,
+    "Vc_tdb": 36.78,
+    "Vp_tdb": 173.47,
+    "Vm_tdb": 0,
+    "Km_tdb": 5.72
+   },
+   "name": "Cyno PK Lin (GUI Fit - all values normalized)"
+  },
+  {
+   "values": {
+    "Cl_tdb": 5.4,
+    "Cld_tdb": 24.17,
+    "Vc_tdb": 36.78,
+    "Vp_tdb": 173.47,
+    "Vm_tdb": 0,
+    "Km_tdb": 5.72,
+    "kabs_TDB": 0,
+    "fbio_TDB": 0
+   },
+   "name": "Human PK Lin (GUI Fit - all values normalized)"
+  },
+  {
+   "values": {
+    "tumor_on": 1,
+    "Vtumor": 100,
+    "KTrptumor": 100,
+    "KBptumor": 1600,
+    "Kptumor": 0.05,
+    "kBtumorprolif": 0.025,
+    "IL6_tiss_contribution": 0.0004
+   },
+   "name": "Tumor compartment - DLBCL"
+  },
+  {
+   "values": {
+    "Cl_tdb": 5.4,
+    "Cld_tdb": 24.17,
+    "Vc_tdb": 36.78,
+    "Vp_tdb": 173.47,
+    "Vm_tdb": 0,
+    "Km_tdb": 5.72,
+    "kabs_TDB": 0.35,
+    "fbio_TDB": 0.5
+   },
+   "name": "Human PK Lin (GUI Fit - all values normalized) - SC - Ave Abs - Ave fbio"
+  },
+  {
+   "values": {
+    "Cl_tdb": 5.4,
+    "Cld_tdb": 24.17,
+    "Vc_tdb": 36.78,
+    "Vp_tdb": 173.47,
+    "Vm_tdb": 0,
+    "Km_tdb": 5.72,
+    "kabs_TDB": 0.5,
+    "fbio_TDB": 0.8
+   },
+   "name": "Human PK Lin (GUI Fit - all values normalized) - SC - Fast Abs - High fbio"
+  },
+  {
+   "values": {
+    "Cl_tdb": 5.4,
+    "Cld_tdb": 24.17,
+    "Vc_tdb": 36.78,
+    "Vp_tdb": 173.47,
+    "Vm_tdb": 0,
+    "Km_tdb": 5.72,
+    "kabs_TDB": 0.2,
+    "fbio_TDB": 0.2
+   },
+   "name": "Human PK Lin (GUI Fit - all values normalized) - SC - Slow Abs - Low fbio"
+  },
+  {
+   "values": {
+    "Cl_tdb": 5.4,
+    "Cld_tdb": 24.17,
+    "Vc_tdb": 36.78,
+    "Vp_tdb": 173.47,
+    "Vm_tdb": 0,
+    "Km_tdb": 5.72,
+    "kabs_TDB": 0.5,
+    "fbio_TDB": 0.5
+   },
+   "name": "Human PK Lin (GUI Fit - all values normalized) - SC - Fast Abs - Ave fbio"
+  },
+  {
+   "values": {
+    "Bcell_tumor_trafficking_on": 5.4,
+    "Cld_tdb": 24.17,
+    "Vc_tdb": 36.78,
+    "Vp_tdb": 173.47,
+    "Vm_tdb": 0,
+    "Km_tdb": 5.72,
+    "kabs_TDB": 0.2,
+    "fbio_TDB": 0.5
+   },
+   "name": "Human PK Lin (GUI Fit - all values normalized) - SC - Slow Abs - Ave fbio"
+  },
+  {
+   "values": {
+    "Bcell_tumor_trafficking_on": 0
+   },
+   "name": "Tumor B cell off"
+  },
+  {
+   "values": {
+    "IL6_tiss_contribution": 0.0004
+   },
+   "name": "chimp - blin"
+  }
+ ]
+}
