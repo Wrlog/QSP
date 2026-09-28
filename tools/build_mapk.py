@@ -1,0 +1,176 @@
+"""Build models/mapk_kirouac2017.cpp and the virtual population file from
+the supplementary material of Kirouac et al. 2017 (npj Syst Biol Appl 3:14,
+CC BY 4.0).
+
+Inputs (from the article's supplementary files):
+  41540_2017_16_MOESM9_ESM.xml   SimBiology model exported as SBML
+  41540_2017_16_MOESM8_ESM.xlsx  Supplementary Tables S1-S11
+
+The SBML carries placeholder parameter values; the in-vivo medians the paper
+uses are in Table S8 ("MED Value") and are written into $PARAM. The
+virtual population (Table S10: 1000 parameter sets with prevalence weights)
+is written to apps/mapk/data/vpop_kirouac2017.csv, and the population PK
+parameters (Table S9) to apps/mapk/data/poppk_kirouac2017.csv.
+
+Usage: python tools/build_mapk.py MOESM9.xml MOESM8.xlsx
+"""
+import csv
+import re
+import sys
+import xml.etree.ElementTree as ET
+
+import openpyxl
+
+M = "{http://www.w3.org/1998/Math/MathML}"
+
+
+def main(sbml, xlsx):
+    root = ET.parse(sbml).getroot()
+    ns = {"s": root.tag.split("}")[0][1:], "m": M[1:-1]}
+    m = root.find("s:model", ns)
+    names = {}
+    for tag in ("compartment", "species", "parameter", "reaction"):
+        for e in m.iter("{%s}%s" % (ns["s"], tag)):
+            names[e.get("id")] = e.get("name")
+
+    def ex(e):
+        tag = e.tag.replace(M, "")
+        if tag == "math":
+            return ex(list(e)[0])
+        if tag == "ci":
+            v = e.text.strip()
+            return names.get(v, v)
+        if tag == "cn":
+            t = e.text.strip()
+            return t + ".0" if re.fullmatch(r"-?\d+", t) else t
+        if tag == "apply":
+            ch = list(e)
+            op = ch[0].tag.replace(M, "")
+            a = [ex(c) for c in ch[1:]]
+            if op == "ci" and ch[0].text.strip() == "HillEQ":
+                # HillEQ.m: max(0,x)^k / (tau^k + max(0,x)^k)
+                x, k, tau = a
+                return "hill(%s, %s, %s)" % (x, k, tau)
+            ops = {"plus": "+", "times": "*", "minus": "-", "divide": "/"}
+            if op in ops:
+                if op == "minus" and len(a) == 1:
+                    return "(-" + a[0] + ")"
+                return "(" + (" " + ops[op] + " ").join(a) + ")"
+            if op == "power":
+                return "pow(%s, %s)" % tuple(a)
+            raise ValueError(op)
+        raise ValueError(tag)
+
+    species = [names[s.get("id")] for s in m.findall("s:listOfSpecies/s:species", ns)]
+    rules = [(names[r.get("variable")], ex(r.find("m:math", ns))) for r in m.find("s:listOfRules", ns)]
+    algebraic = {v for v, _ in rules}
+    states = [s for s in species if s not in algebraic]
+
+    # Order assignment rules so each uses only earlier ones.
+    ordered, pending = [], dict(rules)
+    while pending:
+        progressed = False
+        for v, e in list(pending.items()):
+            deps = set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", e)) & set(pending) - {v}
+            if not deps:
+                ordered.append((v, e))
+                del pending[v]
+                progressed = True
+        if not progressed:
+            raise ValueError("cyclic assignment rules: %s" % list(pending))
+
+    flux = {s: [] for s in states}
+    reactions = []
+    for rx in m.findall("s:listOfReactions/s:reaction", ns):
+        rid = "v_" + re.sub(r"\W", "_", rx.get("name"))
+        reactions.append((rid, ex(rx.find("s:kineticLaw/m:math", ns))))
+        reac = [names[x.get("species")] for x in rx.findall("s:listOfReactants/s:speciesReference", ns)]
+        prod = [names[x.get("species")] for x in rx.findall("s:listOfProducts/s:speciesReference", ns)]
+        for s in reac:
+            if s not in prod:
+                flux[s].append("- " + rid)
+        for s in prod:
+            if s not in reac:
+                flux[s].append("+ " + rid)
+
+    wb = openpyxl.load_workbook(xlsx, read_only=True, data_only=True)
+    s8 = {r[0]: (r[1], r[3]) for r in list(wb["S8 LPSA (In Vivo)"].iter_rows(values_only=True))[1:] if r[0]}
+    s1 = {r[0]: r[2] for r in list(wb["S1 Species"].iter_rows(values_only=True))[1:] if r[0]}
+    params = [names[p.get("id")] for p in m.findall("s:listOfParameters/s:parameter", ns)]
+
+    out = ["$PROB", "Kirouac 2017 MAPK pathway and tumour growth in BRAF(V600E) colorectal cancer", ""]
+    out += ["// " + l for l in [
+        "Kirouac DC, Schaefer G, Chan J, et al. Clinical responses to ERK inhibition",
+        "in BRAF(V600E)-mutant colorectal cancer predicted using a computational",
+        "model. npj Syst Biol Appl 2017;3:14 (CC BY 4.0).",
+        "",
+        "EGFR/RTK -> RAS -> BRAF/CRAF -> MEK -> ERK signalling with DUSP, Sprouty",
+        "and MYC-type feedback (FB1-FB4), a PI3K/AKT arm, S6 driving a",
+        "proliferation signal (TD1) and logistic tumour growth (CELLS, relative",
+        "to baseline). Signalling states are algebraic (quasi-steady state);",
+        "feedbacks, tumour and drug PK are ODEs.",
+        "",
+        "Generated by tools/build_mapk.py from the published SimBiology SBML.",
+        "Parameter defaults are the medians of the clinical virtual population",
+        "(Table S10); parameters not in it take the Table S8 values.",
+        "",
+        "Drugs (dose into): cetuximab mg IV (RTK1i_blood), vemurafenib mg PO",
+        "(RAFi_gut), cobimetinib mg PO (MEKi_gut), GDC-0994 mg PO (ERKi_gut).",
+        "Units: time in days.",
+    ]]
+    # Defaults: the median of the clinical virtual population (Table S10)
+    # where the parameter varies across it, otherwise Table S8. Table S8's
+    # medians are fitted to xenografts (fast growth) and are not clinical.
+    vrows = list(wb["S10 VPOP Parameters & PW"].iter_rows(values_only=True))
+    vhdr = list(vrows[0])
+    vmed = {}
+    for j, h in enumerate(vhdr):
+        vals = sorted(float(r[j]) for r in vrows[1:] if r[0] is not None and r[j] is not None)
+        if vals:
+            vmed[h] = vals[len(vals) // 2]
+    out += ["", "$PARAM @annotated"]
+    for p in params:
+        desc, val = s8.get(p, (p, None))
+        if p in vmed:
+            val = vmed[p]
+        out.append("%-8s : %-22s : %s" % (p, repr(float(val)) if val is not None else "0", desc or p))
+    out += ["", "$INIT @annotated"]
+    for s in states:
+        out.append("%-12s : %-4s : %s" % (s, float(s1.get(s, 0) or 0), s8.get(s, (s, None))[0] or s))
+    out += ["", "$GLOBAL", "#define hill(x, k, tau) (pow(fmax(0.0, x), k) / (pow(tau, k) + pow(fmax(0.0, x), k)))"]
+    out += ["", "$ODE"]
+    for v, e in ordered:
+        out.append("double %s = %s;" % (v, e))
+    out.append("")
+    for rid, e in reactions:
+        out.append("double %s = %s;" % (rid, e))
+    out.append("")
+    for s in states:
+        rhs = " ".join(flux[s]).strip()
+        rhs = rhs[2:] if rhs.startswith("+ ") else ("-" + rhs[2:] if rhs.startswith("- ") else "0")
+        out.append("dxdt_%s = %s;" % (s, rhs))
+    out += ["", "$CAPTURE", " ".join(v for v, _ in ordered if v in ("RTK1", "RAS", "BRAF", "MEK", "ERK", "AKT", "S6",
+                                                                       "RTK1i_C", "RAFi_C", "MEKi_C", "ERKi_C"))]
+    open("models/mapk_kirouac2017.cpp", "w").write("\n".join(out) + "\n")
+
+    rows = list(wb["S10 VPOP Parameters & PW"].iter_rows(values_only=True))
+    hdr = list(rows[0])
+    keep = [i for i, h in enumerate(hdr) if h in params or h in ("VPOP", "PW")]
+    with open("apps/mapk/data/vpop_kirouac2017.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([hdr[i] for i in keep])
+        for r in rows[1:]:
+            if r[0] is None:
+                continue
+            w.writerow([r[i] for i in keep])
+
+    pk = list(wb["S9 popPK Parameters"].iter_rows(values_only=True))
+    with open("apps/mapk/data/poppk_kirouac2017.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        for r in pk:
+            w.writerow(["" if c is None else c for c in r])
+    print("wrote models/mapk_kirouac2017.cpp (%d states, %d rules, %d params)" % (len(states), len(ordered), len(params)))
+
+
+if __name__ == "__main__":
+    main(sys.argv[1], sys.argv[2])

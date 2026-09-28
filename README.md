@@ -1,134 +1,127 @@
-# QSP mAb TMDD Simulator
+# Quantitative systems pharmacology models
 
-A quantitative systems pharmacology (QSP) model of a monoclonal antibody that
-binds a membrane target, with an interactive Shiny dashboard. It follows the
-chain behind most antibody dose selection, from dose to exposure, exposure to
-target engagement, and target engagement to a downstream biomarker. The main
-question it answers is which dose and interval keep receptor occupancy above
-target at trough across a population.
+Four published quantitative systems pharmacology (QSP) models, each rebuilt from its
+original publication as an [mrgsolve](https://mrgsolve.org) model and given an
+interactive Shiny app that runs in the browser.
 
-The model is written for [mrgsolve](https://mrgsolve.org) (`models/tmdd.cpp`).
-The browser version integrates the same equations with an adaptive
-Dormand-Prince solver in base R, and the test suite checks the two against each
-other before every deploy.
+QSP models join a drug's pharmacokinetics to its pharmacodynamics through the
+biology of the disease: signalling pathways, cell populations, hormones and their
+feedbacks, down to a clinical endpoint. That is the difference from the
+[PBPK models](https://github.com/Wrlog/PBPK), which describe pharmacokinetics
+only.
 
-This is for research and teaching only. The defaults are round numbers typical
-of an IgG1, not estimates for any real antibody or target, and nothing here is
-validated for clinical use.
+**Apps:** <https://wrlog.github.io/QSP/>. They run entirely in the browser
+through WebAssembly, so there's nothing to install. The first load takes about
+half a minute while R starts up in the page.
 
-**Browser version:** <https://wrlog.github.io/QSP/> (runs entirely in the
-browser through WebAssembly, so there's nothing to install).
+This is for research and teaching only. Nothing here is validated for clinical
+use or should guide the treatment of a patient.
 
-## Model
+## The models
 
-- **Antibody PK.** Two compartments with linear clearance. Doses are IV
-  bolus, or subcutaneous with first-order absorption and bioavailability.
-- **Target.** A membrane target synthesised at kdeg × R0, degraded at kdeg
-  when free, and internalised with the drug at kint when bound. If kint > kdeg,
-  total target falls under treatment; if kint < kdeg, it accumulates.
-- **Binding.** Quasi-steady-state approximation (Gibiansky et al., J
-  Pharmacokinet Pharmacodyn 2008;35:573). Free drug comes from total drug and
-  total target through the QSS quadratic, written in a form that stays
-  accurate when almost all the drug is bound.
-- **Occupancy.** Complex / total target. At quasi-steady state this equals
-  C / (Kss + C), so 90% occupancy needs free drug at 9 × Kss.
-- **Biomarker.** An indirect response to free target. Production scales as
-  1 − Imax + Imax × (Rfree/R0)^γ, so full target suppression lowers the
-  biomarker by at most Imax.
-- **Population.** Weight effects on CL, Q (exponent 0.8) and V1, V2 (0.6), and
-  log-normal variability on CL, V1, R0 and ka.
+| App | Model | Drugs | Clinical read-out |
+|---|---|---|---|
+| [Coagulation](apps/coagulation) | Humoral coagulation network: 54 species, 116 reactions, vitamin K cycle, fibrin formation and fibrinolysis. Wajima, Isbister & Duffull, *Clin Pharmacol Ther* 2009;86:290 | Warfarin, vitamin K | Clotting factors, prothrombin time / INR |
+| [Bone](apps/bone) | Calcium and phosphate homeostasis, PTH and calcitriol, osteoblast/osteoclast remodelling via RANK-RANKL-OPG and TGF-beta. Peterson & Riggs, *Bone* 2010;46:49; *CPT:PSP* 2012;1:e14 | Denosumab, teriparatide | CTx, bone-specific ALP, serum calcium, PTH, lumbar-spine BMD |
+| [MAPK](apps/mapk) | EGFR-RAS-RAF-MEK-ERK signalling with four feedback loops, PI3K/AKT, tumour growth; 1000-patient virtual population. Kirouac et al., *npj Syst Biol Appl* 2017;3:14 | Cetuximab, vemurafenib, cobimetinib, GDC-0994 | Tumour size, RECIST response rates |
+| [Glucose](apps/glucose) | The 4GI model: glucose, insulin, GLP-1, glucagon and GIP with their feedbacks, healthy and type 2 diabetes. Bosch et al., *CPT:PSP* 2022;11:302 | Liraglutide | Glucose profile, insulin and hormone responses to meals |
 
-| Parameter | Default | |
-|---|---|---|
-| CL, V1, Q, V2 | 0.2 L/day, 3 L, 0.5 L/day, 2.5 L | at 70 kg |
-| ka, F (SC) | 0.25 /day, 0.7 | |
-| Kss | 1 nM | |
-| R0, kdeg, kint | 2 nM, 0.2 /day, 1 /day | |
-| kout, Imax, γ | 0.3 /day, 0.8, 1 | biomarker |
+### How each model was obtained
 
-## Dashboard
+The goal was to carry over the published model exactly, not approximate it.
 
-| Tab | What's on it |
-|---|---|
-| Simulation | Free drug, receptor occupancy and biomarker over time (median with 50%/90% prediction intervals); trough occupancy, share of subjects at target, trough concentration and biomarker change |
-| Dose selection | Minimum occupancy over the final interval, and the share of subjects at target, across a 0.01–10 mg/kg dose grid for the current route and schedule |
-| TMDD mechanism | Dose-normalised profiles after a single dose, which show the TMDD bend, and free and total target under the current regimen |
-| Model setup | Every PK, target, binding, biomarker and variability parameter |
+- **Coagulation:** converted by [tools/build_coagulation.py](tools/build_coagulation.py)
+  (using [tools/sbml_to_mrgsolve.py](tools/sbml_to_mrgsolve.py)) from the curated
+  SBML in BioModels (BIOMD0000000340, CC0). The in-vitro prothrombin-time test
+  follows the companion model BIOMD0000000339: the plasma state is diluted 1:3,
+  tissue factor is added, and clotting is when the fibrin integral reaches
+  1500 nM·s.
+- **Bone:** the OpenBoneMin model file from Metrum Research Group, which
+  implements Peterson & Riggs, used unchanged apart from a header. OpenBoneMin is
+  GPL-3, so [models/bone_peterson_riggs.cpp](models/bone_peterson_riggs.cpp) and
+  [apps/bone](apps/bone) are GPL-3 too ([apps/bone/LICENSE](apps/bone/LICENSE)).
+- **MAPK:** generated by [tools/build_mapk.py](tools/build_mapk.py) from the
+  article's SimBiology SBML and Supplementary Tables (CC BY 4.0). Parameter
+  defaults are the medians of the clinical virtual population (Table S10). The app
+  samples patients from that population by prevalence weight and re-draws drug PK
+  from the population-PK models (Table S9), following the authors' script.
+- **Glucose:** transcribed from the final NONMEM control stream published with the
+  article (Supplementary Material 2), using the final parameter estimates.
 
-The sidebar holds the population weight range, route, dose (mg/kg or flat), an
-optional loading dose, interval, number of doses and the occupancy target.
+## What the models reproduce
 
-## Two engines
+`tests/test_published_behaviour.R` checks these on every build:
 
-mrgsolve compiles C++, which a browser can't do. The model is nonlinear, so
-there's no closed-form shortcut. Instead, `R/tmdd_engine.R` implements an
-adaptive Dormand-Prince 5(4) integrator in base R. It's vectorised across
-subjects, so a population, or a whole dose sweep, is integrated as one system
-with a step size that satisfies every subject's error tolerance. A 7-dose × 200
-subject sweep takes about a second in desktop R.
+- **Coagulation:** baseline PT is 11.1 s. Warfarin 5 mg/day for 14 days gives INR
+  2.2; factor VII falls before prothrombin, and INR returns towards 1 after
+  stopping.
+- **Bone:** denosumab 60 mg every 6 months raises lumbar BMD by 5.1% at one year
+  and suppresses CTx by about 89%. BMD is lost again after stopping, the rebound
+  seen in the clinic.
+- **MAPK:** untreated tumours grow. Adding cetuximab to vemurafenib improves
+  response, because EGFR feedback re-activates the pathway under BRAF inhibition
+  alone.
+- **Glucose:** a 75 g OGTT peaks at 12.7 mM in type 2 diabetes and 7.4 mM in
+  healthy volunteers. Liraglutide 1.8 mg lowers mean daily glucose by 2.6 mM and
+  raises meal-time insulin.
 
-Run locally with mrgsolve installed, the app simulates through mrgsolve. The
-About tab shows which engine is in use. Individual parameters are computed in R
-(`R/population.R`) and passed to both engines, so they get identical inputs.
+## Two engines, one model file
 
-`tests/test_engine_vs_mrgsolve.R` compares the engines across three target
-scenarios (the defaults, an accumulating target, and a high-affinity,
-high-capacity target), both routes, three dose levels and a loading dose. It
-fails if they differ by more than 1e-4. The current worst case is about 3e-7.
+Every model is one mrgsolve model file in [models/](models). mrgsolve compiles
+C++, which a browser can't do, so the browser apps use
+[shared/ode_engine.R](shared/ode_engine.R). It reads the same model file,
+translates its code into vectorised R, and integrates it with a stiff Rosenbrock
+solver (the (2,3) pair behind MATLAB's `ode23s`). The solver runs all virtual
+patients together, with finite-difference Jacobians that are reused across a few
+steps.
 
-`tests/test_model.R` checks the QSS algebra, baseline stability, the
-two-compartment closed form when there's no target, saturation of
-target-mediated clearance, loading doses, the weight exponents and the
-dose-response ordering.
+Run locally with mrgsolve installed, the apps simulate through mrgsolve instead.
+The About tab of each app says which engine is in use.
+
+`tests/test_engine_vs_mrgsolve.R` runs every model through both engines at the
+tolerances the apps use and fails if they differ by more than 0.2%. The current
+worst case is 0.07%, on the clotting-time test; everything else is within 0.01%.
 
 ## Running it locally
 
 ```r
 install.packages(c("shiny", "shinydashboard", "DT", "ggplot2", "scales"))
 install.packages("mrgsolve")   # optional; needs a C++ toolchain (Rtools on Windows)
-shiny::runApp()
+shiny::runApp("apps/coagulation")
 ```
 
 Tests, from the repository root:
 
 ```sh
-Rscript tests/test_model.R                # base R only
-Rscript tests/test_engine_vs_mrgsolve.R   # needs mrgsolve
+Rscript tests/test_published_behaviour.R   # base R only
+Rscript tests/test_engine_vs_mrgsolve.R    # needs mrgsolve
 ```
 
-## Using it from the console
+Using a model directly, with either engine:
 
 ```r
-source("R/tmdd_engine.R"); source("R/population.R")
+source("shared/ode_engine.R")
+m <- mrg_read("models/glucose_4gi_bosch2022.cpp")
+ogtt <- data.frame(time = 1, cmt = "Dglc", amt = 75 / 180.16 * 1000 * 0.776)
+out <- mrg_solve(m, data.frame(PAT = 0), ogtt, times = seq(0, 6, by = 0.1))
+range(out$GLC)
 
-P <- tmdd_individual(200, wt_range = c(50, 100),
-                     cv = list(CL = 30, V1 = 20, R0 = 30, KA = 20), seed = 1)
-
-# 0.3 mg/kg SC every 2 weeks, 6 doses
-reg <- list(route = "sc", amt = 0.3 * P$WT, interval = 14, n_doses = 6)
-res <- tmdd_simulate(P, reg, times = seq(0, 84, by = 0.5))
-fi  <- final_interval(res, reg)
-mean(fi$min_ro >= 0.9)            # share of subjects at >= 90% occupancy
-
-# Dose sweep
-dose_ranging(c(0.03, 0.1, 0.3, 1), P, reg, seq(0, 84, by = 0.5), target_ro = 0.9)
-
-# The same simulation through mrgsolve
-source("reference/mrgsolve_engine.R")
-res_mrg <- tmdd_simulate_mrgsolve(P, reg, seq(0, 84, by = 0.5))
+# or through mrgsolve itself
+mod <- mrgsolve::mread("glucose_4gi_bosch2022", project = "models")
 ```
 
-## Files
+## Layout
 
-- `app.R`: the Shiny dashboard
-- `models/tmdd.cpp`: the mrgsolve model
-- `R/tmdd_engine.R`: QSS equations and the vectorised Dormand-Prince solver
-- `R/population.R`: default parameters, virtual populations, response summaries and dose ranging
-- `R/theme.R`: styling
-- `reference/mrgsolve_engine.R`: runs `models/tmdd.cpp` through the same interface
-- `tests/`: model properties and the engine-vs-mrgsolve check
+- `models/`: the mrgsolve model files
+- `apps/<name>/`: one Shiny app per model (`app.R`, plus model-specific R code and data)
+- `shared/`: the model-file engine, app helpers and styling, shared by all apps
+- `reference/`: the mrgsolve engine used locally and by the tests
+- `tools/`: the converters that built the model files from their published sources, and the app assembly script
+- `tests/`: engine agreement and published-behaviour checks
+- `landing/`: the index page of the site
 - `.github/workflows/shinylive.yml`: tests, WebAssembly export and GitHub Pages deploy
 
 ## License
 
-MIT
+MIT, except `models/bone_peterson_riggs.cpp` and `apps/bone/`, which are GPL-3
+because they derive from OpenBoneMin.

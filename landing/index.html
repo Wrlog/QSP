@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QSP Models</title>
+<meta name="description" content="Interactive quantitative systems pharmacology models - coagulation, bone, MAPK signalling in cancer and glucose regulation - rebuilt from their publications as mrgsolve models and run in the browser.">
+<style>
+  :root {
+    --ink: #16181d; --ink-2: #454951; --ink-3: #6b7078; --rule: #e4e6ea;
+    --surface: #ffffff; --sunken: #f7f8fa; --accent: #2a78d6; --accent-ink: #1d5fae; --tag: #edf3fc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #f2f3f5; --ink-2: #c9ccd2; --ink-3: #9aa0a8; --rule: #2c3038;
+      --surface: #1b1d22; --sunken: #121417; --accent: #5b9be6; --accent-ink: #8ab8ef; --tag: #1f2a3a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--sunken); color: var(--ink-2);
+         font: 16px/1.55 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1080px; margin: 0 auto; padding: 48px 16px 64px; }
+  h1 { color: var(--ink); font-size: 30px; letter-spacing: -0.02em; margin: 0 0 8px; }
+  .lede { max-width: 760px; margin: 0 0 32px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .card { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 22px;
+          display: flex; flex-direction: column; }
+  .card h2 { color: var(--ink); font-size: 19px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .tags { margin: 6px 0 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { background: var(--tag); color: var(--accent-ink); font-size: 12px; padding: 2px 8px; border-radius: 999px; }
+  .card p { margin: 0 0 12px; font-size: 15px; }
+  .ref { color: var(--ink-3); font-size: 13px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--rule); }
+  .open { display: inline-block; margin: 6px 0 14px; color: #fff; background: var(--accent); border-radius: 8px;
+          padding: 8px 14px; text-decoration: none; font-weight: 600; font-size: 14px; align-self: flex-start; }
+  .open:hover { background: var(--accent-ink); }
+  section { margin-top: 40px; }
+  h3 { color: var(--ink); font-size: 17px; margin: 0 0 8px; }
+  a { color: var(--accent-ink); }
+  footer { margin-top: 48px; color: var(--ink-3); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Quantitative systems pharmacology models</h1>
+  <p class="lede">QSP models join a drug's pharmacokinetics to its pharmacodynamics through the
+  biology of the disease: pathways, cells and feedbacks, down to a clinical endpoint. Each model
+  here was rebuilt from its original publication as an <a href="https://mrgsolve.org">mrgsolve</a>
+  model and runs in your browser; nothing to install. The first load takes about half a minute
+  while R starts up in the page.</p>
+
+  <div class="grid">
+    <article class="card">
+      <h2>Warfarin and the coagulation cascade</h2>
+      <div class="tags"><span class="tag">54 species</span><span class="tag">PT / INR</span><span class="tag">Vitamin K</span></div>
+      <p>The humoral coagulation network with warfarin PK and the vitamin K cycle. Clotting factors
+      fall at their own turnover rates, and the prothrombin time of a simulated plasma sample gives
+      the INR.</p>
+      <a class="open" href="coagulation/">Open the app</a>
+      <div class="ref">Wajima T, Isbister GK, Duffull SB. Clin Pharmacol Ther 2009;86:290-298.</div>
+    </article>
+    <article class="card">
+      <h2>Bone and mineral: denosumab and teriparatide</h2>
+      <div class="tags"><span class="tag">RANKL-OPG</span><span class="tag">Calcium / PTH</span><span class="tag">BMD</span></div>
+      <p>Calcium and phosphate homeostasis joined to osteoblast and osteoclast remodelling. Follows
+      CTx, bone-specific ALP and lumbar-spine BMD through treatment and after stopping.</p>
+      <a class="open" href="bone/">Open the app</a>
+      <div class="ref">Peterson MC, Riggs MM. Bone 2010;46:49-63; CPT Pharmacometrics Syst Pharmacol 2012;1:e14 (OpenBoneMin, GPL-3).</div>
+    </article>
+    <article class="card">
+      <h2>MAPK inhibitors in BRAF(V600E) colorectal cancer</h2>
+      <div class="tags"><span class="tag">Signalling feedback</span><span class="tag">Virtual patients</span><span class="tag">RECIST</span></div>
+      <p>EGFR-RAS-RAF-MEK-ERK signalling with feedback, tumour growth and four targeted drugs.
+      Simulates a virtual trial for any combination and compares regimens in the same patients.</p>
+      <a class="open" href="mapk/">Open the app</a>
+      <div class="ref">Kirouac DC, Schaefer G, Chan J, et al. npj Syst Biol Appl 2017;3:14.</div>
+    </article>
+    <article class="card">
+      <h2>Glucose, insulin and the incretins</h2>
+      <div class="tags"><span class="tag">GLP-1 / GIP</span><span class="tag">Glucagon</span><span class="tag">Liraglutide</span></div>
+      <p>The 4GI model: glucose, insulin, GLP-1, glucagon and GIP with the feedbacks between them,
+      in healthy volunteers and type 2 diabetes, with a GLP-1 receptor agonist.</p>
+      <a class="open" href="glucose/">Open the app</a>
+      <div class="ref">Bosch R, Petrone M, Arends R, et al. CPT Pharmacometrics Syst Pharmacol 2022;11:302-317.</div>
+    </article>
+  </div>
+
+  <section>
+    <h3>How it works</h3>
+    <p>Every model is a single mrgsolve model file. Run locally with mrgsolve installed, the apps
+    simulate through mrgsolve. In the browser the same file is translated to R and solved with a
+    stiff Rosenbrock solver, and the test suite checks the two engines against each other, and each
+    model against its published results, before every deployment.
+    Source: <a href="https://github.com/Wrlog/QSP">github.com/Wrlog/QSP</a>.
+    For physiologically based pharmacokinetic (PK-only) models, see the
+    <a href="https://wrlog.github.io/PBPK/">PBPK models</a>.</p>
+  </section>
+
+  <footer>For research and teaching only. Nothing here is validated for clinical use or should guide the treatment of a patient.</footer>
+</main>
+</body>
+</html>
