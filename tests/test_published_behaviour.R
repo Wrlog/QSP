@@ -126,4 +126,32 @@ check(all(diff(pk) > 0), "peak antibody rises with dose from 1 to 30 ug")
 p30 <- pre[[preset_id("bnt", 30, 21)]]
 check(max(p30$IGG) / p30$IGG[which.min(abs(p30$time - 21))] > 5, "the second dose boosts antibody more than 5-fold")
 
+# --- Antibody-drug conjugate T-DM1 (Singh & Shah 2017) ------------------------------------
+m <- mrg_read("models/adc_tdm1_singh2017.cpp")
+source(file.path("apps", "adc", "R", "tdm1.R"))
+adc <- function(P, ev, tt) mrg_solve(m, P, ev, tt, rtol = 1e-5, atol = 1e-9, nonneg = TRUE)
+# untreated mouse tumours grow with the fitted doubling time; T-DM1 inhibits them dose-dependently
+kpl <- MOUSE_MODELS[MOUSE_MODELS$model == "KPL-4", ]
+Pm <- as.data.frame(c(PK_SETS$mouse, list(GLIN = 0, DTEXP = kpl$dt, KKILL = kpl$kkill, AG = HER2_AG[["3+"]], TV0 = 200e-6)))
+tv <- sapply(c(0, 0.3, 3, 15), function(d) tail(adc(Pm, tdm1_doses(0, d, 0.025), c(0.01, 28))$TV_MM3[, 1], 1))
+check(abs(tv[1] / 200 / 2^(28 / kpl$dt) - 1) < 0.01, sprintf("untreated KPL-4 doubles every %.1f days (Table I)", kpl$dt))
+check(all(diff(tv) < 0) && tv[4] < 200,
+      sprintf("KPL-4, single dose: day-28 tumour %.0f / %.0f / %.0f / %.0f mm3 at 0 / 0.3 / 3 / 15 mg/kg - dose-dependent, regression at 15",
+              tv[1], tv[2], tv[3], tv[4]))
+# patients: T-DM1 falls faster than total trastuzumab (deconjugation), and the DAR with it
+Ph <- transform(as.data.frame(PK_SETS$human), KKILL = 0)
+r <- adc(Ph, regimen_events(REGIMENS[[1]](1), 70), c(0.01, 7, 14, 20.9))
+ratio <- r$ADC_UGML[, 1] / r$TT_UGML[, 1]
+check(all(diff(ratio) < 0) && ratio[4] < 0.25, sprintf("3.6 mg/kg: T-DM1 / total trastuzumab falls from %.2f to %.2f over the cycle", ratio[1], ratio[4]))
+check(abs(r$states[3, "DAR", 1] / 3.5 / exp(-0.241 * (14 - 0)) - 1) < 1e-3, "the average DAR falls with the deconjugation rate (half-life 2.9 days)")
+# Fig. 6: at equal dose intensity, fractionated dosing keeps tumour DM1 higher; every 4 weeks lowers it
+tumour_dm1 <- function(nm) {
+  reg <- REGIMENS[[nm]](4); reg <- reg[reg$time < 84, ]
+  mean(adc(Ph, regimen_events(reg, 70), seq(21.25, 84, by = 0.25))$DM1_TUMOUR[, 1])
+}
+dm <- sapply(names(REGIMENS), tumour_dm1)
+check(dm[3] > dm[1] && dm[4] > dm[1] && dm[2] < dm[1],
+      sprintf("mean tumour DM1 over cycles 2-4: Q3W %.0f, Q4W %.0f, weekly %.0f, front-loaded %.0f nM - the ranking behind Fig. 6",
+              dm[1], dm[2], dm[3], dm[4]))
+
 cat("PASS\n")

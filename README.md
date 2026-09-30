@@ -1,6 +1,6 @@
 # Quantitative systems pharmacology models
 
-Eight published quantitative systems pharmacology (QSP) models, each rebuilt from its
+Nine published quantitative systems pharmacology (QSP) models, each rebuilt from its
 original publication as an [mrgsolve](https://mrgsolve.org) model and given an
 interactive Shiny app that runs in the browser.
 
@@ -28,6 +28,7 @@ use or should guide the treatment of a patient.
 | [mRNA vaccine](apps/mrna-vaccine) | LNP uptake by innate cells, dendritic-cell maturation and migration, helper T cells, B cells in 17 affinity classes, germinal centres, memory and plasma cells; 220 equations. Dasti et al., *CPT:PSP* 2025 | BNT162b2, mRNA-1273 | Antibody (IgG) over a year, affinity maturation |
 | [T-cell engager](apps/tce) | CD20xCD3 bispecific: T-cell activation, B-cell killing, trafficking and margination across blood, spleen, lymph nodes, marrow and tumour; IL-6. Hosseini et al., *npj Syst Biol Appl* 2020;6:28 | Mosunetuzumab | IL-6 peak (cytokine release), B-cell depletion |
 | [CAR-T](apps/cart) | Cellular kinetics of a living drug: expansion, contraction, persistence, with between-patient variability, covariates, tocilizumab and steroids. Stein et al., *CPT:PSP* 2019;8:285 | Tisagenlecleucel | Transgene Cmax, Tmax, AUC0-28d, persistence |
+| [Antibody-drug conjugate](apps/adc) | T-DM1: plasma PK of total antibody, conjugate and released DM1; tumour disposition (vascular and surface exchange, HER2 binding, internalisation, lysosomal release, tubulin binding); intracellular DM1 drives killing. Eleven mouse tumour models; human PK scaled from monkeys. Singh & Shah, *AAPS J* 2017;19:1054 | Trastuzumab emtansine | Tumour growth inhibition, tumour payload by regimen |
 | [PROTAC](apps/protac) | Ternary-complex target engagement with cooperativity, catalytic degradation on top of target turnover, occupancy-driven inhibition and downstream response. *Pharmaceutics* 2023;15:195 | BTK degraders (Zorba et al. series) | Degradation, Dmax, DC50, hook effect |
 
 ### How each model was obtained
@@ -73,6 +74,18 @@ The goal was to carry over the published model exactly, not approximate it.
 - **CAR-T:** the published model (Table 1 and the MLXTRAN code in the Supplementary
   Material) written as differential equations for the log levels. The data set
   supplied with the article is simulated, not patient data, so it is not shown.
+- **Antibody-drug conjugate:** Eqs. 1-21 and Tables I and III of Singh & Shah 2017,
+  with the cellular and tumour parameters of Singh et al. 2016. Six printed equations
+  disagree with the model they describe (a deconjugation term on the wrong
+  compartment, CL where CLD belongs, a missing volume scaling), and the model file
+  uses their mass-balanced form, with each one listed in its header. The paper gives
+  the average DAR only an initial value; here it returns to 3.5 with every dose (a
+  replace event, which both engines now support). The clinical part of the paper
+  predicts progression-free survival from clinically reported growth rates, but it
+  does not say how its linear-phase doubling time becomes the growth equation's rate,
+  and the published survival curves could not be reproduced from the text. The app
+  therefore keeps the exact mouse efficacy model and human PK, and marks its
+  patient tumour-course tab as illustrative, with a doubling time the user sets.
 - **PROTAC:** the kcat model's equations and Appendix A closed forms, with the
   binding constants and cell parameters of Supplementary Tables S1-S2. The paper
   is an in-vitro framework; the app's in-vivo tab adds a one-compartment PK model
@@ -105,6 +118,13 @@ The goal was to carry over the published model exactly, not approximate it.
   AUC matches the paper's closed form.
 - **PROTAC:** steady-state degradation at DCmax equals the Appendix A Dmax; the
   hook effect appears in degradation but not in total target modulation.
+- **Antibody-drug conjugate:** untreated KPL-4 xenografts double every 8.2 days
+  (Table I). A single dose inhibits them dose-dependently, and 15 mg/kg shrinks them
+  below their starting size. In patients, T-DM1 falls from 100% to 14% of total
+  trastuzumab over a 3-week cycle as the drug deconjugates. At the same dose
+  intensity, weekly (1.2 mg/kg) and front-loaded (3 + 0.3 + 0.3 mg/kg) dosing keep
+  tumour DM1 higher than 3.6 mg/kg every 3 weeks, and every 4 weeks lowers it. That
+  is the ranking behind the paper's regimen comparison (Fig. 6).
 
 ## Two engines, one model file
 
@@ -122,9 +142,11 @@ The About tab of each app says which engine is in use.
 `tests/test_engine_vs_mrgsolve.R` runs every model through both engines at the
 tolerances the apps use and fails if they differ by more than 0.2%. The current
 worst case is 0.07%, on the clotting-time test; everything else is within 0.02%.
-For many subjects with few states (CAR-T virtual patients) the solver inverts
-all the small systems at once; for large systems (the 220-equation vaccine) it
-reuses the matrix inverse while the step size is steady.
+For many subjects with few states (CAR-T virtual patients, ADC virtual mice) the
+solver inverts all the small systems at once; for these and for large systems (the
+220-equation vaccine) it reuses the matrix inverse while the step size is steady,
+and it carries the Jacobian across output times, refreshing it after every bolus
+dose. Doses can also replace a compartment's value (mrgsolve's `evid = 8`).
 
 ## Running it locally
 
@@ -164,6 +186,51 @@ mod <- mrgsolve::mread("glucose_4gi_bosch2022", project = "models")
 - `tests/`: engine agreement and published-behaviour checks
 - `landing/`: the index page of the site
 - `.github/workflows/shinylive.yml`: tests, WebAssembly export and GitHub Pages deploy
+
+## Further reading: ADCs and bispecific and multispecific antibodies
+
+Papers on QSP and PK-PD modelling of these modalities, for anyone extending the
+repository. Open-access ones are marked OA.
+
+Antibody-drug conjugates:
+- Singh AP, Shah DK. Application of a PK-PD modeling and simulation-based strategy
+  for clinical translation of antibody-drug conjugates: a case study with trastuzumab
+  emtansine (T-DM1). *AAPS J* 2017;19:1054-1070 (the [ADC](apps/adc) app).
+- Singh AP, Maass KF, Betts AM, et al. Evolution of antibody-drug conjugate tumor
+  disposition model to predict preclinical tumor pharmacokinetics of
+  trastuzumab-emtansine (T-DM1). *AAPS J* 2016;18:861-875.
+- Shah DK, Haddish-Berhane N, Betts A. Bench to bedside translation of antibody drug
+  conjugates using a multiscale mechanistic PK/PD model: a case study with
+  brentuximab-vedotin. *J Pharmacokinet Pharmacodyn* 2012;39:643-659.
+- Betts AM, Haddish-Berhane N, Tolsma J, et al. Preclinical to clinical translation of
+  antibody-drug conjugates using PK/PD modeling: a retrospective analysis of
+  inotuzumab ozogamicin. *AAPS J* 2016;18:1101-1116.
+- Singh AP, Seigel GM, Guo L, et al. Evolution of the systems pharmacokinetics-
+  pharmacodynamics model for antibody-drug conjugates to characterize tumor
+  heterogeneity and in vivo bystander effect. *J Pharmacol Exp Ther*
+  2020;374:184-199.
+- Chang HP, Shah DK. A translational physiologically-based pharmacokinetic model for
+  MMAE-based antibody-drug conjugates. *J Pharmacokinet Pharmacodyn* 2025;52:27 (OA).
+
+Bispecific and multispecific antibodies:
+- Hosseini I, Gadkar K, Stefanich E, et al. Mitigating the risk of cytokine release
+  syndrome in a Phase I trial of CD20/CD3 bispecific antibody mosunetuzumab in NHL:
+  impact of translational system modeling. *npj Syst Biol Appl* 2020;6:28 (OA; the
+  [T-cell engager](apps/tce) app).
+- Abrams RE, Pierre K, El-Murr N, et al. Quantitative systems pharmacology modeling
+  sheds light into the dose response relationship of a trispecific T cell engager in
+  multiple myeloma. *Sci Rep* 2022;12:10976 (OA; CD38 x CD28 x CD3, MATLAB code in
+  the supplement). This is an in-vitro model of 760 species with no PK, too large for
+  the browser engine as it stands.
+- Betts A, Haddish-Berhane N, Shah DK, et al. A translational quantitative systems
+  pharmacology model for CD3 bispecific molecules: application to quantify T
+  cell-mediated tumor cell killing by P-cadherin LP DART. *AAPS J* 2019;21:66.
+- Betts A, van der Graaf PH. Mechanistic quantitative pharmacology strategies for the
+  early clinical development of bispecific antibodies in oncology. *Clin Pharmacol
+  Ther* 2020;108:528-541.
+- Spinosa P, Joslyn L, Ramanujan S, et al. A generalized minimal PBPK-PD model of
+  bispecific antibodies. *CPT:PSP* 2026;15:e70167 (OA; built in the
+  [PBPK repository](https://github.com/Wrlog/PBPK)).
 
 ## License
 

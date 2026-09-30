@@ -510,8 +510,11 @@ batched_inverse <- function(A) {
 #'
 #' @param uses_t whether the model's right-hand side depends on time
 #'   explicitly (if not, the time-derivative term is zero and is skipped)
+#' @param jac the Jacobian state returned by the previous segment, carried
+#'   over when the state is continuous across the boundary (an output time,
+#'   not a bolus), so that it is not recomputed at every output time
 rosenbrock_segment <- function(f, Y, t0, t1, V, u, h, rtol, atol, max_steps = 2e5,
-                               uses_t = TRUE, jac_every = 5) {
+                               uses_t = TRUE, jac_every = 5, jac = NULL) {
   n <- nrow(Y); m <- ncol(Y)
   d <- 1 / (2 + sqrt(2)); e32 <- 6 + sqrt(2)
   t <- t0
@@ -525,14 +528,18 @@ rosenbrock_segment <- function(f, Y, t0, t1, V, u, h, rtol, atol, max_steps = 2e
   # (vectorised over subjects) instead of one solve() per subject.
   batched <- m >= 4 && n <= 16
   pert <- cbind(rep(seq_len(n), m), rep((seq_len(m) - 1) * (n + 1), each = n) + 1 + rep(seq_len(n), m))
-  # Large systems: the inversion dominates, so while the Jacobian is being
-  # reused and the step size would only grow a little, keep the step size
-  # and reuse the inverse too.
-  reuse_w <- n > 60
+  # Large systems, and many subjects at once: the inversion dominates, so
+  # while the Jacobian is being reused and the step size would only grow a
+  # little, keep the step size and reuse the inverse too.
+  reuse_w <- n > 60 || batched
   jac_id <- 0
   w_key <- NULL
   J <- NULL
+  Winv <- NULL
   jac_age <- Inf
+  if (!is.null(jac)) {
+    J <- jac$J; jac_age <- jac$age; jac_id <- jac$id; Winv <- jac$Winv; w_key <- jac$w_key
+  }
   while (t < t1 - 1e-12 * max(1, abs(t1))) {
     h <- min(h, t1 - t)
     if (jac_age >= jac_every) {
@@ -553,8 +560,11 @@ rosenbrock_segment <- function(f, Y, t0, t1, V, u, h, rtol, atol, max_steps = 2e
       (fu(t + dt, Y, V, u) - F0) / dt
     } else 0
     if (batched) {
-      Winv <- batched_inverse(rep(as.vector(I), m) - h * d * J)
-      if (is.null(Winv)) { h <- h / 4; jac_age <- Inf; next }
+      if (!identical(w_key, c(h, jac_id))) {
+        Winv <- batched_inverse(rep(as.vector(I), m) - h * d * J)
+        if (is.null(Winv)) { h <- h / 4; jac_age <- Inf; w_key <- NULL; next }
+        w_key <- c(h, jac_id)
+      }
       mult <- function(Rhs) {
         out <- matrix(0, n, m)
         for (j in seq_len(n)) out <- out + Winv[, j, ] * rep(Rhs[j, ], each = n)
@@ -594,7 +604,7 @@ rosenbrock_segment <- function(f, Y, t0, t1, V, u, h, rtol, atol, max_steps = 2e
     steps <- steps + 1
     if (steps > max_steps) stop("ODE solver exceeded the maximum number of steps")
   }
-  list(Y = Y, h = h)
+  list(Y = Y, h = h, jac = list(J = J, age = jac_age, id = jac_id, Winv = Winv, w_key = w_key))
 }
 
 #' Simulate a model
@@ -603,8 +613,9 @@ rosenbrock_segment <- function(f, Y, t0, t1, V, u, h, rtol, atol, max_steps = 2e
 #' @param P data frame of parameters, one row per subject (may be a single
 #'   row, or have zero columns to use the defaults)
 #' @param events data frame of doses: time, cmt (name), amt, and optionally
-#'   rate (0 = bolus), ii and addl for repeats, and ID (row of P) to dose one
-#'   subject only
+#'   rate (0 = bolus), ii and addl for repeats, ID (row of P) to dose one
+#'   subject only, and evid (1 = dose, the default; 8 = set the compartment
+#'   to amt, as mrgsolve's replace event)
 #' @param times output times
 #' @param init optional starting state (named vector, or [cmt x subject] matrix)
 #' @param nonneg evaluate the right-hand side at max(state, 0)
@@ -657,14 +668,17 @@ mrg_solve <- function(model, P = data.frame(row.names = 1), events = NULL, times
   }
   states <- array(NA_real_, c(length(times), n, m), dimnames = list(NULL, model$cmt, NULL))
   h <- h0
+  jac <- NULL
   for (j in seq_along(grid)) {
     tj <- grid[j]
     # bolus doses at tj
     b <- ev[abs(ev$time - tj) < 1e-10 & ev$rate == 0, , drop = FALSE]
+    if (nrow(b)) jac <- NULL                  # the state jumps: a fresh Jacobian
     for (k in seq_len(nrow(b))) {
       ci <- match(b$cmt[k], model$cmt)
       cols <- if (is.na(b$ID[k])) seq_len(m) else b$ID[k]
-      Y[ci, cols] <- Y[ci, cols] + b$amt[k] * mn$bio[ci, cols]
+      # evid 8 replaces the amount in the compartment, as in mrgsolve
+      Y[ci, cols] <- if (b$evid[k] == 8) b$amt[k] else Y[ci, cols] + b$amt[k] * mn$bio[ci, cols]
     }
     o <- which(out_idx == j)
     if (length(o)) states[o, , ] <- Y
@@ -680,9 +694,10 @@ mrg_solve <- function(model, P = data.frame(row.names = 1), events = NULL, times
     # After a bolus into a state that drives fast dynamics the step size
     # adapts down on its own; restarting it from h0 at every dose only costs
     # steps, so keep it unless it is larger than the coming segment.
-    seg <- rosenbrock_segment(f, Y, tj, grid[j + 1], V, u, h, rtol, atol, uses_t = uses_t)
+    seg <- rosenbrock_segment(f, Y, tj, grid[j + 1], V, u, h, rtol, atol, uses_t = uses_t, jac = jac)
     Y <- seg$Y
     h <- seg$h
+    jac <- seg$jac
   }
   res <- list(time = times, states = states)
   if (length(model$table) || length(model$capture)) {
@@ -695,17 +710,18 @@ mrg_solve <- function(model, P = data.frame(row.names = 1), events = NULL, times
 mrg_expand_events <- function(events, m) {
   if (is.null(events) || !nrow(events)) {
     return(data.frame(time = numeric(0), cmt = character(0), amt = numeric(0),
-                      rate = numeric(0), ID = integer(0)))
+                      rate = numeric(0), ID = integer(0), evid = numeric(0)))
   }
   e <- events
   if (is.null(e$rate)) e$rate <- 0
+  if (is.null(e$evid)) e$evid <- 1
   if (is.null(e$ii)) e$ii <- 0
   if (is.null(e$addl)) e$addl <- 0
   if (is.null(e$ID)) e$ID <- NA_integer_
   rows <- lapply(seq_len(nrow(e)), function(i) {
     k <- 0:e$addl[i]
     data.frame(time = e$time[i] + k * e$ii[i], cmt = as.character(e$cmt[i]),
-               amt = e$amt[i], rate = e$rate[i], ID = e$ID[i])
+               amt = e$amt[i], rate = e$rate[i], ID = e$ID[i], evid = e$evid[i])
   })
   do.call(rbind, rows)
 }

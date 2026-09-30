@@ -128,6 +128,21 @@ pr <- presets[[preset_id("bnt", 30, 21)]]
 b2 <- mrg_solve_mrgsolve(m, s$P, s$ev, OUT_TIMES)
 report("mrna shipped preset vs mrgsolve (IgG)", rel(pr$IGG, b2$IGG[, 1]))
 
+# Antibody-drug conjugate T-DM1: a patient on 3.6 mg/kg every 3 weeks x 4 (the DAR reset at
+# each dose is a replace event), and a KPL-4 mouse xenograft with killing
+m <- mrg_read("models/adc_tdm1_singh2017.cpp")
+source(file.path("apps", "adc", "R", "tdm1.R"))
+tt <- seq(0.5, 84, by = 0.5) + 0.01
+P <- as.data.frame(PK_SETS$human); ev <- regimen_events(REGIMENS[[1]](4), 70)
+a <- mrg_solve(m, P, ev, tt, rtol = 1e-5, atol = 1e-9, nonneg = TRUE)
+b <- mrg_solve_mrgsolve(m, P, ev, tt)
+for (v in c("ADC_UGML", "TT_UGML", "DM1_NGML", "DM1_TUMOUR", "TV_MM3")) report(paste("adc patient", v), rel(a[[v]], b[[v]]))
+P <- as.data.frame(c(PK_SETS$mouse, list(GLIN = 0, DTEXP = 8.21, KKILL = 1.96e-3, TV0 = 200e-6)))
+ev <- tdm1_doses(c(0, 21), 3, 0.025); tt <- seq(0.5, 49, by = 0.5) + 0.01
+a <- mrg_solve(m, P, ev, tt, rtol = 1e-5, atol = 1e-9, nonneg = TRUE)
+b <- mrg_solve_mrgsolve(m, P, ev, tt)
+for (v in c("ADC_UGML", "DM1_TUMOUR", "TV_MM3")) report(paste("adc mouse", v), rel(a[[v]], b[[v]]))
+
 cat(sprintf("comparisons: %d, worst: %.2e\n", length(worst), max(worst)))
 if (!all(is.finite(worst)) || max(worst) > 2e-3) stop("browser engine disagrees with mrgsolve")
 cat("PASS\n")
